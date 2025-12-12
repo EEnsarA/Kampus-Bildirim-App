@@ -45,7 +45,7 @@ app.*.map.json
 /android/app/release
 
 
-# FLUTTER DART STANDARTLARI 
+# FLUTTER DART 
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -54,7 +54,7 @@ build/
 .pub-cache/
 .pub/
 
-# IDE AYARLARI (VS Code & Android Studio)
+# IDE 
 .idea/
 .vscode/
 *.iml
