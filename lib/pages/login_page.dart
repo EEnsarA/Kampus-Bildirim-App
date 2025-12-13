@@ -13,8 +13,24 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isLogin = true;
+
+  String? _selectedDepartment;
+  final List<String> _departments = [
+    "Bilgisayar Mühendisliği",
+    "Elektrik-Elektronik Müh.",
+    "Makine Mühendisliği",
+    "Mimarlık",
+    "İdari Personel",
+    "Güvenlik",
+    "Öğrenci İşleri",
+  ];
 
   @override
   void dispose() {
@@ -23,28 +39,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // --- BACKEND BAĞLANTISI ---
-        // ref.read ile servise ulaşıyoruz.
-        // Not: Buton tıklamalarında 'read' kullanılır, 'watch' değil.
-        await ref
-            .read(authServiceProvider)
-            .signIn(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            );
-
-        // Başarılıysa yönlendir
+        final authService = ref.read(authServiceProvider);
+        if (_isLogin) {
+          await authService.signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+        } else {
+          await authService.register(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            name: _nameController.text.trim(),
+            surname: _surnameController.text.trim(),
+            department: _selectedDepartment!,
+          );
+        }
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const HomePage()),
           );
         }
       } catch (e) {
-        // Hata varsa göster
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -70,12 +89,72 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset("assets/images/logo.png", height: 120),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 Text(
                   "Kampüs Bildirim",
                   style: TextStyle(fontSize: 36, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
+                if (!_isLogin) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: "Ad",
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                          validator:
+                              (val) =>
+                                  (!_isLogin && (val == null || val.isEmpty))
+                                      ? "Ad gerekli"
+                                      : null,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _surnameController,
+                          decoration: const InputDecoration(
+                            labelText: "Soyad",
+                            border: OutlineInputBorder(),
+                          ),
+                          validator:
+                              (val) =>
+                                  (!_isLogin && (val == null || val.isEmpty))
+                                      ? "Soyad gerekli"
+                                      : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    value: _selectedDepartment,
+                    items:
+                        _departments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept,
+                            child: Text(dept),
+                          );
+                        }).toList(),
+                    onChanged:
+                        (value) => setState(() => _selectedDepartment = value),
+                    decoration: const InputDecoration(
+                      labelText: "Birim / Bölüm",
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.school),
+                    ),
+                    validator:
+                        (val) =>
+                            (!_isLogin && val == null)
+                                ? "Lütfen birim seçiniz"
+                                : null,
+                  ),
+                ],
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -110,43 +189,68 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 30),
                 SizedBox(
-                  width: double.infinity, // Buton tüm genişliği kaplasın
+                  width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                    onPressed: _isLoading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: Color.fromARGB(240, 41, 37, 89),
                       foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child:
                         _isLoading
                             ? const CircularProgressIndicator(
                               color: Colors.white,
                             )
-                            : const Text(
-                              "Giriş Yap",
+                            : Text(
+                              _isLogin ? "Giriş Yap" : "Kayıt Ol",
                               style: TextStyle(fontSize: 18),
                             ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        print("Kayıt Yapılıyor...");
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white, // Yazı rengi
-                    ),
-                    child: const Text(
-                      "Kayıt Ol",
-                      style: TextStyle(fontSize: 18),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0, top: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _isLogin = !_isLogin;
+                            _formKey.currentState?.reset();
+                          });
+                        },
+                        icon: Icon(
+                          _isLogin ? Icons.person_add : Icons.login,
+                          size: 24, // İkon boyutu
+                        ),
+                        label: Text(
+                          _isLogin ? "Kayıt Ol" : "Giriş Yap",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Color.fromARGB(240, 41, 37, 89),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          side: const BorderSide(
+                            color: Color.fromARGB(240, 41, 37, 89),
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30),
