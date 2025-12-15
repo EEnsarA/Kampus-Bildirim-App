@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kampus_bildirim/pages/home_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -59,9 +59,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
         }
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
+          context.go("/home");
         }
       } catch (e) {
         if (mounted) {
