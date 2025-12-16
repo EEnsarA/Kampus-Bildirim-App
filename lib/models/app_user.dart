@@ -17,7 +17,7 @@ class AppUser {
   // Map (key-value) :
   // key => String
   // value => dynamic (her şey olabilir int,float,bool,string)
-  // dynamic datayı  AppUser Çevirme
+  // firestore map => AppUser Çevirme
   factory AppUser.fromMap(Map<String, dynamic> data, String uid) {
     return AppUser(
       uid: uid,
@@ -28,7 +28,7 @@ class AppUser {
     );
   }
 
-  // Firestore için
+  // AppUser => Firestore map çevirme
   Map<String, dynamic> toMap() {
     return {
       'email': email,

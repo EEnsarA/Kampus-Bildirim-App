@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kampus_bildirim/models/app_user.dart';
+import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
@@ -12,7 +13,9 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     //ref (providers)
     final userProfileAsync = ref.watch(userProfileProvider);
+    final notificationsAsync = ref.watch(notificationsProvider);
     final authService = ref.watch(authServiceProvider);
+    final searchQuery = ref.watch(searchFilterProvider);
 
     return userProfileAsync.when(
       loading:
@@ -29,24 +32,101 @@ class HomePage extends ConsumerWidget {
         }
 
         return Scaffold(
+          endDrawer: Drawer(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Filtrele",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  CheckboxListTile(
+                    value: false, // Burayı state ile yönetmelisin
+                    title: const Text("Sadece Okunmamışlar"),
+                    onChanged: (val) {},
+                  ),
+                  CheckboxListTile(
+                    value: false,
+                    title: const Text("Yüksek Öncelik"),
+                    onChanged: (val) {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              context.push('/add-notification');
+            },
+            backgroundColor: Color.fromARGB(230, 41, 37, 89),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.add),
+          ),
+
           appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.name,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  user.department,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
+            backgroundColor: Colors.white,
+            elevation: 1, // shadow
+            titleSpacing: 0,
+
+            leading: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Icon(
+                Icons.account_circle,
+                size: 32,
+                color: const Color.fromARGB(250, 41, 37, 89),
+              ),
+            ),
+            title: SizedBox(
+              height: 50,
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Ara...",
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: const Color.fromARGB(230, 41, 37, 89),
+                    size: 24,
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade300, // Hafif gri arka plan
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
                 ),
-              ],
+                onChanged: (value) {
+                  ref.read(searchFilterProvider.notifier).state = value;
+                },
+              ),
             ),
+
             actions: [
+              Builder(
+                builder:
+                    (context) => IconButton(
+                      icon: const Icon(
+                        Icons.filter_list,
+                        color: Color.fromARGB(230, 41, 37, 89),
+                      ),
+                      tooltip: "Filtrele",
+                      onPressed: () => Scaffold.of(context).openEndDrawer(),
+                    ),
+              ),
               IconButton(
                 onPressed: () async {
                   authService.signOut();
@@ -55,24 +135,111 @@ class HomePage extends ConsumerWidget {
                   }
                 },
                 icon: Icon(Icons.logout),
+                color: const Color.fromARGB(230, 41, 37, 89),
               ),
+              const SizedBox(width: 5),
             ],
           ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (user.role == 'admin') ...[
-                  // user.role (TYPE SAFE!)
-                  // ... Admin widgetları ...
-                  const Text("YÖNETİCİ", style: TextStyle(color: Colors.red)),
-                ],
-                const Text("Bildirim Listesi..."),
-              ],
-            ),
+          body: notificationsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (err, stack) =>
+                    Center(child: Text('Bildirimler yüklenemedi: $err')),
+            data: (allNotifications) {
+              final filteredList =
+                  allNotifications.where((notification) {
+                    final searchLower = searchQuery.toLowerCase();
+                    final titleLower = notification.title.toLowerCase();
+                    final contentLower = notification.content.toLowerCase();
+                    return titleLower.contains(searchLower) ||
+                        contentLower.contains(searchLower);
+                  }).toList();
+
+              if (filteredList.isEmpty) {
+                return const Center(child: Text("Bildirim bulunamadı."));
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                itemCount: filteredList.length,
+                itemBuilder: (context, index) {
+                  final notification = filteredList[index];
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 1,
+                    child: ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: notification.typeColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          notification.typeIcon,
+                          color: notification.typeColor,
+                        ),
+                      ),
+                      title: Text(
+                        notification.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            notification.content,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${notification.createdAt.day}/${notification.createdAt.month} - ${notification.createdAt.hour}:${notification.createdAt.minute.toString().padLeft(2, '0')}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: notification.statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: notification.statusColor.withOpacity(0.5),
+                          ),
+                        ),
+                        child: Text(
+                          notification.statusLabel,
+                          style: TextStyle(
+                            color: notification.statusColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      onTap: () {},
+                    ),
+                  );
+                },
+              );
+            },
           ),
         );
-      }, // data
-    ); // userProfileAsync
+      },
+    );
   }
 }
