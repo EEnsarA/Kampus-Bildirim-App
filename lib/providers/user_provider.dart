@@ -6,6 +6,7 @@ import 'package:kampus_bildirim/models/app_user.dart';
 // ref (referans) parametresi : Riverpod parametresi ref.watch , ref.read yapılabilmesi için
 // Klasik template fonksiyonu <User?> User type gelebilir null da olabilir (?)
 
+// o anki auth bilgisi döner .
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
@@ -13,6 +14,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 // async* / yield (Stream): Fonksiyon return gibi kapanmaz arka planda kalır ancak veri geldiğinde tetiklenir
 // yield* : pointer gibi düşünülebilir nesneyi değil referansı verilir .
 
+// o auth bilgisine göre dönen uid ile eşleşen users collectiondaki user'ı döner .
 final userProfileProvider = StreamProvider.autoDispose<AppUser?>((ref) {
   final authState = ref.watch(authStateProvider);
 

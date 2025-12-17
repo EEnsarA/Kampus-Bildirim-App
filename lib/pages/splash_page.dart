@@ -34,12 +34,12 @@ class _SplashPageState extends ConsumerState<SplashPage> {
       );
     });
 
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school, size: 80, color: Colors.blue),
+            Image.asset("assets/images/logo.png", height: 120),
             SizedBox(height: 20),
             CircularProgressIndicator(),
             SizedBox(height: 10),

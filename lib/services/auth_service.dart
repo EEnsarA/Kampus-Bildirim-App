@@ -6,9 +6,13 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(authRepository: repo);
 });
 
+// Neden service içerisinde her şeyi yapmak varken repository olarak ayrıldı ?
+// Çünkü ileride database , database yöntemi değişirse sadece repo değişilir . servic'e göre yeni dbli repo yazılır.
+// Bu sayede baştan service yazmak zorunda kalınmaz . Özellikle büyük projelerde mimari .
 class AuthService {
   final AuthRepository authRepository;
 
+  //ctor
   AuthService({required this.authRepository});
 
   //login

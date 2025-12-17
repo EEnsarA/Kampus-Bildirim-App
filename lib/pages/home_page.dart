@@ -15,6 +15,7 @@ class HomePage extends ConsumerWidget {
     final userProfileAsync = ref.watch(userProfileProvider);
     final notificationsAsync = ref.watch(notificationsProvider);
     final authService = ref.watch(authServiceProvider);
+    // Search bar inputu tutan state .
     final searchQuery = ref.watch(searchFilterProvider);
 
     return userProfileAsync.when(
@@ -66,7 +67,7 @@ class HomePage extends ConsumerWidget {
             onPressed: () {
               context.push('/add-notification');
             },
-            backgroundColor: Color.fromARGB(230, 41, 37, 89),
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -84,7 +85,7 @@ class HomePage extends ConsumerWidget {
               child: Icon(
                 Icons.account_circle,
                 size: 32,
-                color: const Color.fromARGB(250, 41, 37, 89),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             title: SizedBox(
@@ -98,7 +99,7 @@ class HomePage extends ConsumerWidget {
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: const Color.fromARGB(230, 41, 37, 89),
+                    color: Theme.of(context).colorScheme.secondary,
                     size: 24,
                   ),
                   filled: true,
@@ -119,9 +120,9 @@ class HomePage extends ConsumerWidget {
               Builder(
                 builder:
                     (context) => IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.filter_list,
-                        color: Color.fromARGB(230, 41, 37, 89),
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       tooltip: "Filtrele",
                       onPressed: () => Scaffold.of(context).openEndDrawer(),
@@ -135,7 +136,7 @@ class HomePage extends ConsumerWidget {
                   }
                 },
                 icon: Icon(Icons.logout),
-                color: const Color.fromARGB(230, 41, 37, 89),
+                color: Theme.of(context).colorScheme.secondary,
               ),
               const SizedBox(width: 5),
             ],
@@ -148,6 +149,7 @@ class HomePage extends ConsumerWidget {
             data: (allNotifications) {
               final filteredList =
                   allNotifications.where((notification) {
+                    // Hem search bar inputu hem notificationdan gelen title ve content küçük harf yapılır ve bu şekilde filtrelenir
                     final searchLower = searchQuery.toLowerCase();
                     final titleLower = notification.title.toLowerCase();
                     final contentLower = notification.content.toLowerCase();
@@ -171,14 +173,14 @@ class HomePage extends ConsumerWidget {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 1,
                     child: ListTile(
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: notification.typeColor.withOpacity(0.1),
+                          color: notification.typeColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -215,10 +217,14 @@ class HomePage extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: notification.statusColor.withOpacity(0.1),
+                          color: notification.statusColor.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: notification.statusColor.withOpacity(0.5),
+                            color: notification.statusColor.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         ),
                         child: Text(

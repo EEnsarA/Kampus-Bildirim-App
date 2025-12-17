@@ -99,10 +99,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Expanded(
                         child: TextFormField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "Ad",
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.person),
+                            prefixIcon: Icon(
+                              Icons.person,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                           ),
                           validator:
                               (val) =>
@@ -140,10 +143,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         }).toList(),
                     onChanged:
                         (value) => setState(() => _selectedDepartment = value),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: "Birim / Bölüm",
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.school),
+                      prefixIcon: Icon(
+                        Icons.school,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                     ),
                     validator:
                         (val) =>
@@ -157,10 +163,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "E-Posta",
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -172,11 +181,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true, // Şifreyi gizle
-                  decoration: const InputDecoration(
+                  obscureText: true,
+                  decoration: InputDecoration(
                     labelText: "Şifre",
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -224,7 +236,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         },
                         icon: Icon(
                           _isLogin ? Icons.person_add : Icons.login,
-                          size: 24, // İkon boyutu
+                          size: 24,
                         ),
                         label: Text(
                           _isLogin ? "Kayıt Ol" : "Giriş Yap",
@@ -234,13 +246,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Color.fromARGB(240, 41, 37, 89),
+                          foregroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 5,
                           ),
-                          side: const BorderSide(
-                            color: Color.fromARGB(240, 41, 37, 89),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
                             width: 1.5,
                           ),
                           shape: RoundedRectangleBorder(
