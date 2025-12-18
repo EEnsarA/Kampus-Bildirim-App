@@ -100,7 +100,7 @@ class HomePage extends ConsumerWidget {
                         size: 38,
                         color: Theme.of(
                           context,
-                        ).colorScheme.secondary.withOpacity(0.5),
+                        ).colorScheme.secondary.withValues(alpha: 0.5),
                       ),
                   error:
                       (_, __) => Icon(
