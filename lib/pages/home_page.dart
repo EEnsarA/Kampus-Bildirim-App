@@ -77,15 +77,62 @@ class HomePage extends ConsumerWidget {
 
           appBar: AppBar(
             backgroundColor: Colors.white,
-            elevation: 1, // shadow
+            elevation: 0, // shadow
             titleSpacing: 0,
-
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1.0),
+              child: Container(color: Colors.grey.shade200, height: 1.0),
+            ),
             leading: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Icon(
-                Icons.account_circle,
-                size: 32,
-                color: Theme.of(context).colorScheme.secondary,
+              padding: const EdgeInsets.only(
+                left: 8.0,
+                top: 8,
+                bottom: 8,
+                right: 8,
+              ),
+              child: InkWell(
+                onTap: () => context.push("/profile"),
+                customBorder: const CircleBorder(),
+                child: userProfileAsync.when(
+                  loading:
+                      () => Icon(
+                        Icons.account_circle,
+                        size: 38,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withOpacity(0.5),
+                      ),
+                  error:
+                      (_, __) => Icon(
+                        Icons.account_circle,
+                        size: 38,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+
+                  // 2. Veri Geldi
+                  data: (user) {
+                    // A. Kullanıcı var ve Resmi Var -> RESMİ GÖSTER 🖼️
+                    if (user != null &&
+                        user.avatarUrl != null &&
+                        user.avatarUrl!.isNotEmpty) {
+                      return CircleAvatar(
+                        backgroundColor:
+                            Colors
+                                .grey
+                                .shade200, // Resim yüklenene kadar gri zemin
+                        backgroundImage: NetworkImage(user.avatarUrl!),
+                        radius: 19, // Size 38'e denk gelmesi için yarıçap
+                      );
+                    }
+
+                    // B. Resim Yok -> ESKİ İKONU GÖSTER 👤
+                    return Icon(
+                      Icons.account_circle,
+                      size: 38,
+                      color: Theme.of(context).colorScheme.secondary,
+                    );
+                  },
+                ),
               ),
             ),
             title: SizedBox(
@@ -102,6 +149,17 @@ class HomePage extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.secondary,
                     size: 24,
                   ),
+                  suffixIcon: Builder(
+                    builder:
+                        (context) => IconButton(
+                          icon: Icon(
+                            Icons.tune,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          tooltip: "Filtrele",
+                          onPressed: () => Scaffold.of(context).openEndDrawer(),
+                        ),
+                  ),
                   filled: true,
                   fillColor: Colors.grey.shade300, // Hafif gri arka plan
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -117,17 +175,19 @@ class HomePage extends ConsumerWidget {
             ),
 
             actions: [
-              Builder(
-                builder:
-                    (context) => IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      tooltip: "Filtrele",
-                      onPressed: () => Scaffold.of(context).openEndDrawer(),
-                    ),
+              IconButton(
+                icon: Icon(
+                  Icons.map_outlined,
+                  size: 26,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                tooltip: "Haritada Gör",
+                onPressed: () {
+                  //  push geri dönmeli
+                  context.push('/map');
+                },
               ),
+
               IconButton(
                 onPressed: () async {
                   authService.signOut();
@@ -171,6 +231,7 @@ class HomePage extends ConsumerWidget {
                   final notification = filteredList[index];
 
                   return Card(
+                    color: Color.fromARGB(255, 242, 241, 241),
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

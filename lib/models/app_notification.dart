@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 enum NotificationType {
   general,
@@ -62,6 +63,24 @@ class AppNotification {
     }
   }
 
+  // google map için konum renkleri
+  double get markerHue {
+    switch (type) {
+      case NotificationType.emergency:
+        return BitmapDescriptor.hueRed;
+      case NotificationType.lostFound:
+        return BitmapDescriptor.hueBlue;
+      case NotificationType.environment:
+        return BitmapDescriptor.hueGreen;
+      case NotificationType.failure:
+        return BitmapDescriptor.hueOrange;
+      case NotificationType.event:
+        return BitmapDescriptor.hueViolet;
+      case NotificationType.general:
+        return BitmapDescriptor.hueAzure;
+    }
+  }
+
   IconData get typeIcon {
     switch (type) {
       case NotificationType.emergency:
@@ -110,11 +129,11 @@ class AppNotification {
   Color get statusColor {
     switch (status) {
       case NotificationStatus.open:
-        return Colors.redAccent;
+        return Color.fromARGB(255, 223, 182, 125);
       case NotificationStatus.reviewing:
         return Colors.orange;
       case NotificationStatus.resolved:
-        return Colors.green;
+        return Colors.grey;
     }
   }
 

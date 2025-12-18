@@ -4,6 +4,7 @@ class AppUser {
   final String name;
   final String role;
   final String department;
+  final String? avatarUrl;
 
   //ctor
   AppUser({
@@ -12,6 +13,7 @@ class AppUser {
     required this.name,
     required this.role,
     required this.department,
+    this.avatarUrl,
   });
 
   // Map (key-value) :
@@ -25,6 +27,7 @@ class AppUser {
       name: data['name'] ?? 'İsimsiz',
       role: data['role'] ?? 'user',
       department: data['department'] ?? '',
+      avatarUrl: data['avatarUrl'],
     );
   }
 
@@ -35,6 +38,7 @@ class AppUser {
       'name': name,
       'role': role,
       'department': department,
+      'avatarUrl': avatarUrl,
     };
   }
 }

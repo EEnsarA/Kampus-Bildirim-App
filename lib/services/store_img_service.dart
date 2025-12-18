@@ -17,4 +17,23 @@ class StoreImgService {
       return null;
     }
   }
+
+  static Future<String?> uploadProfileImage(
+    File imageFile,
+    String userId,
+  ) async {
+    try {
+      // Fark 1: Klasör 'profile_images' oldu
+      // Fark 2: Dosya adı 'userId.jpg' oldu (Böylece üzerine yazar, yer kaplamaz)
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child("profile_images")
+          .child('$userId.jpg');
+
+      await ref.putFile(imageFile);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      return null;
+    }
+  }
 }
