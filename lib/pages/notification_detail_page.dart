@@ -670,13 +670,13 @@ class _NotificationDetailPageState
         final admin = ref
             .read(userProfileProvider)
             .maybeWhen(data: (u) => u, orElse: () => null);
-        await repository.deleteNotification(
+        await repository.softDeleteNotification(
           notification.id,
           adminId: admin?.uid,
           adminName: admin?.fullName,
         );
         if (mounted) {
-          showCustomToast(context, 'Bildirim sonlandırıldı');
+          showCustomToast(context, 'Bildirim sonlandırıldı (soft-delete)');
           Navigator.of(context).pop();
         }
       } catch (e) {

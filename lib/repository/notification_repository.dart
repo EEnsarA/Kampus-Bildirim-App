@@ -29,8 +29,55 @@ class NotificationRepository {
                   doc.id,
                 ),
               )
+              .where((n) => n.isDeleted == false)
               .toList();
         });
+  }
+
+  /// Soft-delete a notification (mark as deleted)
+  Future<void> softDeleteNotification(
+    String notificationId, {
+    String? adminId,
+    String? adminName,
+  }) async {
+    try {
+      await _notificationsCollection.doc(notificationId).update({
+        'isDeleted': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      await _logAdminAction(
+        adminId: adminId,
+        adminName: adminName,
+        action: 'soft_delete',
+        notificationId: notificationId,
+        details: null,
+      );
+    } catch (e) {
+      throw Exception('Bildirim silinemedi (soft-delete): $e');
+    }
+  }
+
+  /// Restore a soft-deleted notification
+  Future<void> restoreNotification(
+    String notificationId, {
+    String? adminId,
+    String? adminName,
+  }) async {
+    try {
+      await _notificationsCollection.doc(notificationId).update({
+        'isDeleted': false,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      await _logAdminAction(
+        adminId: adminId,
+        adminName: adminName,
+        action: 'restore',
+        notificationId: notificationId,
+        details: null,
+      );
+    } catch (e) {
+      throw Exception('Bildirim geri getirilemedi: $e');
+    }
   }
 
   /// Belirli bir bildirimi ID ile getir

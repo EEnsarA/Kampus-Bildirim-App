@@ -9,6 +9,7 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'admin_actions_page.dart';
 
 /// Admin paneli sayfası
 /// Sadece admin rol'ü olan kullanıcılar erişebilir
@@ -205,6 +206,19 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed:
+                              () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const AdminActionsPage(),
+                                ),
+                              ),
+                          icon: const Icon(Icons.history),
+                          label: const Text('İşlem Kayıtları'),
+                        ),
+                      ),
                       const TabBar(
                         labelColor: Colors.black,
                         indicatorColor: Colors.red,

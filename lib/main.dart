@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kampus_bildirim/constants/app_colors.dart';
 import 'package:kampus_bildirim/firebase_options.dart';
 import 'package:kampus_bildirim/routes/app_router.dart';
@@ -16,6 +17,18 @@ class MainApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize Firebase Messaging and subscribe to topic 'all' for emergency broadcasts
+    FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging.instance.subscribeToTopic('all');
+
+    // Handle foreground messages (debug/log only)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      // Minimal handling: print for now; replace with local notification logic later
+      // ignore: avoid_print
+      print(
+        'FCM message received: ${message.notification?.title} - ${message.notification?.body}',
+      );
+    });
     //navigation işlemleri için routerProvider
     final router = ref.watch(routerProvider);
 
