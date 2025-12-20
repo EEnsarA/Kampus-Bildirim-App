@@ -35,3 +35,20 @@ final userProfileProvider = StreamProvider.autoDispose<AppUser?>((ref) {
         return AppUser.fromMap(snapshot.data()!, user.uid);
       });
 });
+
+// user id sine göre Firestore dan user getirme
+final userByIdProvider = FutureProvider.family<AppUser?, String>((
+  ref,
+  userId,
+) async {
+  try {
+    final doc =
+        await FirebaseFirestore.instance.collection("users").doc(userId).get();
+    if (doc.exists) {
+      return AppUser.fromMap(doc.data()!, doc.id);
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+});

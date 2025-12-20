@@ -1,7 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/pages/add_notification_page.dart';
 import 'package:kampus_bildirim/pages/map_page.dart';
+import 'package:kampus_bildirim/pages/notification_detail_page.dart';
 import 'package:kampus_bildirim/pages/profile_page.dart';
 import '../pages/login_page.dart';
 import '../pages/home_page.dart';
@@ -19,10 +21,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/add-notification',
         builder: (context, state) => const AddNotificationPage(),
       ),
-      GoRoute(path: "/map", builder: (context, state) => const MapPage()),
+      GoRoute(
+        path: "/map",
+        builder: (context, state) {
+          final notification = state.extra as AppNotification?;
+          return MapPage(targetNotification: notification);
+        },
+      ),
       GoRoute(
         path: "/profile",
         builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: "/notification_detail",
+        builder: (context, state) {
+          final notification = state.extra as AppNotification;
+          return NotificationDetailPage(notification: notification);
+        },
       ),
     ],
   );
