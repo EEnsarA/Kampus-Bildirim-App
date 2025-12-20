@@ -146,7 +146,9 @@ class _MapPageState extends ConsumerState<MapPage> {
               child: MapNotificationCard(
                 notification: _selectedNotification!,
                 onDetailPressed: () {
-                  //context.push(location)
+                  context.push(
+                    '/notification-detail/${_selectedNotification!.id}',
+                  );
                 },
               ),
             ),

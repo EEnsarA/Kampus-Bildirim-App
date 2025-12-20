@@ -1,24 +1,53 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
+import 'package:kampus_bildirim/repository/notification_repository.dart';
 
-//home_page deki searchbar içine yazılan stringi tutan state .
-final searchFilterProvider = StateProvider<String>((ref) => "");
-
-// notifications collectionundaki tüm notificationları güncelden eskiye doğru getirir
+// Tüm bildirimleri merkezi repository üzerinden getir
 final notificationsProvider = StreamProvider<List<AppNotification>>((ref) {
-  return FirebaseFirestore.instance
-      .collection("notifications")
-      .orderBy(
-        "createdAt",
-        descending: true,
-      ) // en güncelden eskiye doğru sıralanacak
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs.map((doc) {
-          final data = doc.data();
-          return AppNotification.fromMap(data, doc.id);
-        }).toList();
-      });
+  final repository = ref.watch(notificationRepositoryProvider);
+  return repository.getAllNotificationsStream();
 });
+
+// Belirli bir bildirimi ID ile getir
+final notificationDetailProvider =
+    FutureProvider.family<AppNotification?, String>((
+      ref,
+      notificationId,
+    ) async {
+      final repository = ref.watch(notificationRepositoryProvider);
+      return repository.getNotificationById(notificationId);
+    });
+
+// Kullanıcının takip ettiği bildirimleri getir
+final followedNotificationsProvider =
+    StreamProvider.family<List<AppNotification>, String>((ref, userId) {
+      final repository = ref.watch(notificationRepositoryProvider);
+      return repository.getFollowedNotificationsStream(userId);
+    });
+
+// Tür bazlı bildirimleri getir
+final notificationsByTypeProvider =
+    StreamProvider.family<List<AppNotification>, NotificationType>((ref, type) {
+      final repository = ref.watch(notificationRepositoryProvider);
+      return repository.getNotificationsByType(type);
+    });
+
+// Durum bazlı bildirimleri getir (açık bildirimler gibi)
+final notificationsByStatusProvider =
+    StreamProvider.family<List<AppNotification>, NotificationStatus>((
+      ref,
+      status,
+    ) {
+      final repository = ref.watch(notificationRepositoryProvider);
+      return repository.getNotificationsByStatus(status);
+    });
+
+// Arama yapmak için
+final searchNotificationsProvider =
+    FutureProvider.family<List<AppNotification>, String>((ref, query) async {
+      final repository = ref.watch(notificationRepositoryProvider);
+      if (query.isEmpty) {
+        return [];
+      }
+      return repository.searchNotifications(query);
+    });

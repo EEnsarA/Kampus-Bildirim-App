@@ -6,17 +6,22 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
     //ref (providers)
     final userProfileAsync = ref.watch(userProfileProvider);
     final notificationsAsync = ref.watch(notificationsProvider);
     final authService = ref.watch(authServiceProvider);
-    // Search bar inputu tutan state .
-    final searchQuery = ref.watch(searchFilterProvider);
 
     return userProfileAsync.when(
       loading:
@@ -169,7 +174,9 @@ class HomePage extends ConsumerWidget {
                   ),
                 ),
                 onChanged: (value) {
-                  ref.read(searchFilterProvider.notifier).state = value;
+                  setState(() {
+                    _searchQuery = value;
+                  });
                 },
               ),
             ),
@@ -210,7 +217,7 @@ class HomePage extends ConsumerWidget {
               final filteredList =
                   allNotifications.where((notification) {
                     // Hem search bar inputu hem notificationdan gelen title ve content küçük harf yapılır ve bu şekilde filtrelenir
-                    final searchLower = searchQuery.toLowerCase();
+                    final searchLower = _searchQuery.toLowerCase();
                     final titleLower = notification.title.toLowerCase();
                     final contentLower = notification.content.toLowerCase();
                     return titleLower.contains(searchLower) ||
@@ -298,7 +305,9 @@ class HomePage extends ConsumerWidget {
                         ),
                       ),
 
-                      onTap: () {},
+                      onTap: () {
+                        context.push('/notification-detail/${notification.id}');
+                      },
                     ),
                   );
                 },
