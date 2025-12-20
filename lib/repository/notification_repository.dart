@@ -192,6 +192,14 @@ class NotificationRepository {
       await _notificationsCollection.doc(notificationId).update({
         'followedBy': FieldValue.arrayUnion([userId]),
       });
+      // Log the user action for audit (follow)
+      await _logAdminAction(
+        adminId: userId,
+        adminName: null,
+        action: 'follow',
+        notificationId: notificationId,
+        details: null,
+      );
     } catch (e) {
       throw Exception('Bildirim takibi yapılamadı: $e');
     }
@@ -206,6 +214,14 @@ class NotificationRepository {
       await _notificationsCollection.doc(notificationId).update({
         'followedBy': FieldValue.arrayRemove([userId]),
       });
+      // Log the user action for audit (unfollow)
+      await _logAdminAction(
+        adminId: userId,
+        adminName: null,
+        action: 'unfollow',
+        notificationId: notificationId,
+        details: null,
+      );
     } catch (e) {
       throw Exception('Bildirim takibi kaldırılamadı: $e');
     }

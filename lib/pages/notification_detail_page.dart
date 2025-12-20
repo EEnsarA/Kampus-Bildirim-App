@@ -372,7 +372,6 @@ class _NotificationDetailPageState
                             children: [
                               Expanded(
                                 child: _buildStatusButton(
-                                  context,
                                   ref,
                                   notification,
                                   NotificationStatus.open,
@@ -382,7 +381,6 @@ class _NotificationDetailPageState
                               const SizedBox(width: 8),
                               Expanded(
                                 child: _buildStatusButton(
-                                  context,
                                   ref,
                                   notification,
                                   NotificationStatus.reviewing,
@@ -392,7 +390,6 @@ class _NotificationDetailPageState
                               const SizedBox(width: 8),
                               Expanded(
                                 child: _buildStatusButton(
-                                  context,
                                   ref,
                                   notification,
                                   NotificationStatus.resolved,
@@ -409,7 +406,6 @@ class _NotificationDetailPageState
                                 child: OutlinedButton(
                                   onPressed:
                                       () => _showEditContentDialog(
-                                        context,
                                         ref,
                                         notification,
                                       ),
@@ -424,7 +420,6 @@ class _NotificationDetailPageState
                                   ),
                                   onPressed:
                                       () => _confirmAndDeleteNotification(
-                                        context,
                                         ref,
                                         notification,
                                       ),
@@ -441,7 +436,6 @@ class _NotificationDetailPageState
                       ElevatedButton.icon(
                         onPressed:
                             () => _toggleFollowNotification(
-                              context,
                               ref,
                               notification,
                               user.uid,
@@ -474,7 +468,6 @@ class _NotificationDetailPageState
   /// Admin'in bildirimin durumunu değiştirmek için kullandığı buton
   /// Mevcut duruma göre yeşil gösterilir, diğerleri gri olur
   Widget _buildStatusButton(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
     NotificationStatus status,
@@ -488,8 +481,7 @@ class _NotificationDetailPageState
       onPressed:
           isCurrentStatus
               ? null
-              : () =>
-                  _updateNotificationStatus(context, ref, notification, status),
+              : () => _updateNotificationStatus(ref, notification, status),
       style: ElevatedButton.styleFrom(
         // Mevcut durum yeşil, diğerleri gri
         backgroundColor: isCurrentStatus ? Colors.green : Colors.grey.shade300,
@@ -503,7 +495,6 @@ class _NotificationDetailPageState
   /// Admin tarafından bildirimin durumunu güncellemek için kullanılan fonksiyon
   /// Yeni durum Firestore'a kaydedilir ve kullanıcılara bildirim gönderilir
   Future<void> _updateNotificationStatus(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
     NotificationStatus newStatus,
@@ -522,21 +513,18 @@ class _NotificationDetailPageState
       );
 
       // Başarılı olduysa kullanıcıya bildir
-      if (mounted) {
-        showCustomToast(context, 'Bildirim durumu güncelleştirme başarılı.');
-      }
+      if (!mounted) return;
+      showCustomToast(this.context, 'Bildirim durumu güncelleştirme başarılı.');
     } catch (e) {
       // Hata oluşursa toast ile uyar
-      if (mounted) {
-        showCustomToast(context, 'Hata: $e', isError: true);
-      }
+      if (!mounted) return;
+      showCustomToast(this.context, 'Hata: $e', isError: true);
     }
   }
 
   /// Kullanıcının bildirimi takip etme/çıkma işlemini yönetir
   /// Takip ediyor ise kaldırır, etmiyorsa ekler
   Future<void> _toggleFollowNotification(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
     String userId,
@@ -551,9 +539,8 @@ class _NotificationDetailPageState
           userId: userId,
         );
         setState(() => _isFollowing = false);
-        if (mounted) {
-          showCustomToast(context, 'Bildirimin takibi sonlandırıldı');
-        }
+        if (!mounted) return;
+        showCustomToast(this.context, 'Bildirimin takibi sonlandırıldı');
       } else {
         // Takip etmiyorsa, takibe al
         await repository.followNotification(
@@ -561,25 +548,21 @@ class _NotificationDetailPageState
           userId: userId,
         );
         setState(() => _isFollowing = true);
-        if (mounted) {
-          showCustomToast(context, 'Bildirim takibe alındı ❤️');
-        }
+        if (!mounted) return;
+        showCustomToast(this.context, 'Bildirim takibe alındı ❤️');
       }
 
       // Listeyi otomatik yenile (Riverpod stream güncellemesini tetikle)
-      if (mounted) {
-        ref.watch(notificationsProvider);
-      }
+      if (!mounted) return;
+      ref.watch(notificationsProvider);
     } catch (e) {
-      if (mounted) {
-        showCustomToast(context, 'Hata: $e', isError: true);
-      }
+      if (!mounted) return;
+      showCustomToast(this.context, 'Hata: $e', isError: true);
     }
   }
 
   /// Admin için açıklamayı düzenleme diyaloğu
   Future<void> _showEditContentDialog(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
   ) async {
@@ -613,7 +596,8 @@ class _NotificationDetailPageState
     if (result == true) {
       final newContent = controller.text.trim();
       if (newContent.isEmpty) {
-        showCustomToast(context, 'Açıklama boş olamaz', isError: true);
+        if (!mounted) return;
+        showCustomToast(this.context, 'Açıklama boş olamaz', isError: true);
         return;
       }
 
@@ -628,23 +612,24 @@ class _NotificationDetailPageState
           adminId: admin?.uid,
           adminName: admin?.fullName,
         );
-        if (mounted) showCustomToast(context, 'Açıklama güncellendi');
+        if (!mounted) return;
+        showCustomToast(this.context, 'Açıklama güncellendi');
         // Yeniden yükle
         ref.invalidate(notificationDetailProvider(notification.id));
       } catch (e) {
-        if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
+        if (!mounted) return;
+        showCustomToast(this.context, 'Hata: $e', isError: true);
       }
     }
   }
 
   /// Admin tarafından bildirimi sonlandırma (silme) onayı
   Future<void> _confirmAndDeleteNotification(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
   ) async {
     final confirmed = await showDialog<bool>(
-      context: context,
+      context: this.context,
       builder:
           (ctx) => AlertDialog(
             title: const Text('Bildirimi Sonlandır'),
@@ -675,12 +660,12 @@ class _NotificationDetailPageState
           adminId: admin?.uid,
           adminName: admin?.fullName,
         );
-        if (mounted) {
-          showCustomToast(context, 'Bildirim sonlandırıldı (soft-delete)');
-          Navigator.of(context).pop();
-        }
+        if (!mounted) return;
+        showCustomToast(this.context, 'Bildirim sonlandırıldı (soft-delete)');
+        Navigator.of(this.context).pop();
       } catch (e) {
-        if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
+        if (!mounted) return;
+        showCustomToast(this.context, 'Hata: $e', isError: true);
       }
     }
   }

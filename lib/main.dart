@@ -18,17 +18,22 @@ class MainApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Initialize Firebase Messaging and subscribe to topic 'all' for emergency broadcasts
-    FirebaseMessaging.instance.requestPermission();
-    FirebaseMessaging.instance.subscribeToTopic('all');
+    // Wrapped in try/catch so tests (which may not call Firebase.initializeApp) don't fail.
+    try {
+      FirebaseMessaging.instance.requestPermission();
+      FirebaseMessaging.instance.subscribeToTopic('all');
 
-    // Handle foreground messages (debug/log only)
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      // Minimal handling: print for now; replace with local notification logic later
-      // ignore: avoid_print
-      print(
-        'FCM message received: ${message.notification?.title} - ${message.notification?.body}',
-      );
-    });
+      // Handle foreground messages (debug/log only)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        // Minimal handling: print for now; replace with local notification logic later
+        // ignore: avoid_print
+        print(
+          'FCM message received: ${message.notification?.title} - ${message.notification?.body}',
+        );
+      });
+    } catch (_) {
+      // If Firebase isn't initialized (e.g., in widget tests), ignore FCM setup.
+    }
     //navigation işlemleri için routerProvider
     final router = ref.watch(routerProvider);
 

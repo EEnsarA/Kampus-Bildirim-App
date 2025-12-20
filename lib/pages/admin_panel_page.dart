@@ -95,9 +95,9 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                               icon: const Icon(Icons.more_vert),
                               onSelected: (value) {
                                 if (value == 'make_admin') {
-                                  _changeUserRole(context, ref, uid, 'admin');
+                                  _changeUserRole(ref, uid, 'admin');
                                 } else if (value == 'make_user') {
-                                  _changeUserRole(context, ref, uid, 'user');
+                                  _changeUserRole(ref, uid, 'user');
                                 }
                               },
                               itemBuilder:
@@ -129,7 +129,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
 
   /// Kullanıcı rolünü güncelle (basit update)
   Future<void> _changeUserRole(
-    BuildContext context,
     WidgetRef ref,
     String uid,
     String newRole,
@@ -138,9 +137,11 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'role': newRole,
       });
-      if (mounted) showCustomToast(context, 'Kullanıcı rolü güncellendi');
+      if (!mounted) return;
+      showCustomToast(this.context, 'Kullanıcı rolü güncellendi');
     } catch (e) {
-      if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
+      if (!mounted) return;
+      showCustomToast(this.context, 'Hata: $e', isError: true);
     }
   }
 
@@ -372,7 +373,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _sendEmergencyNotification(context, ref, user),
+                onPressed: () => _sendEmergencyNotification(ref, user),
                 icon: const Icon(Icons.send),
                 label: const Text('Acil Duyuru Yayınla'),
                 style: ElevatedButton.styleFrom(
@@ -462,7 +463,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
               children: [
                 Expanded(
                   child: _buildStatusButton(
-                    context,
                     ref,
                     notification,
                     NotificationStatus.open,
@@ -472,7 +472,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildStatusButton(
-                    context,
                     ref,
                     notification,
                     NotificationStatus.reviewing,
@@ -482,7 +481,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildStatusButton(
-                    context,
                     ref,
                     notification,
                     NotificationStatus.resolved,
@@ -513,7 +511,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
   /// Admin'in durumu değiştirmek için kullandığı mini buton
   /// Mevcut duruma göre renk değişir
   Widget _buildStatusButton(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
     NotificationStatus status,
@@ -526,7 +523,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
       onPressed:
           isCurrentStatus
               ? null
-              : () => _updateStatusQuick(context, ref, notification, status),
+              : () => _updateStatusQuick(ref, notification, status),
       style: ElevatedButton.styleFrom(
         // Mevcut durum yeşil, diğerleri gri
         backgroundColor: isCurrentStatus ? Colors.green : Colors.grey.shade300,
@@ -540,7 +537,6 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
 
   /// Hızlı durum güncelleme (admin panelinden)
   Future<void> _updateStatusQuick(
-    BuildContext context,
     WidgetRef ref,
     AppNotification notification,
     NotificationStatus newStatus,
@@ -556,31 +552,28 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
         adminId: admin?.uid,
         adminName: admin?.fullName,
       );
-
-      if (mounted) {
-        showCustomToast(
-          context,
-          '${notification.title} bildirimi "${newStatus.name}" durumuna güncellendi.',
-        );
-      }
+      if (!mounted) return;
+      showCustomToast(
+        this.context,
+        '${notification.title} bildirimi "${newStatus.name}" durumuna güncellendi.',
+      );
     } catch (e) {
-      if (mounted) {
-        showCustomToast(context, 'Hata: $e', isError: true);
-      }
+      if (!mounted) return;
+      showCustomToast(this.context, 'Hata: $e', isError: true);
     }
   }
 
   /// Acil duyuru yayınla
   /// Tüm kullanıcılara gidecek önemli bildirim
-  Future<void> _sendEmergencyNotification(
-    BuildContext context,
-    WidgetRef ref,
-    AppUser admin,
-  ) async {
+  Future<void> _sendEmergencyNotification(WidgetRef ref, AppUser admin) async {
     // Form doğrulaması
     if (_emergencyTitleController.text.isEmpty ||
         _emergencyContentController.text.isEmpty) {
-      showCustomToast(context, 'Başlık ve içeriği doldurunuz.', isError: true);
+      showCustomToast(
+        this.context,
+        'Başlık ve içeriği doldurunuz.',
+        isError: true,
+      );
       return;
     }
 
@@ -593,22 +586,22 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
         adminId: admin.uid,
         adminName: admin.fullName,
       );
+      if (!mounted) return;
+      // Form temizle
+      _emergencyTitleController.clear();
+      _emergencyContentController.clear();
 
-      if (mounted) {
-        // Form temizle
-        _emergencyTitleController.clear();
-        _emergencyContentController.clear();
+      // Başarı mesajı göster
+      showCustomToast(
+        this.context,
+        'Acil duyuru tüm kullanıcılara yayınlandı!',
+      );
 
-        // Başarı mesajı göster
-        showCustomToast(context, 'Acil duyuru tüm kullanıcılara yayınlandı!');
-
-        // Listeyi yenile
-        ref.watch(notificationsProvider);
-      }
+      // Listeyi yenile
+      ref.watch(notificationsProvider);
     } catch (e) {
-      if (mounted) {
-        showCustomToast(context, 'Hata: $e', isError: true);
-      }
+      if (!mounted) return;
+      showCustomToast(context, 'Hata: $e', isError: true);
     }
   }
 }
