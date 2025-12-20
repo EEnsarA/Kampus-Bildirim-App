@@ -78,7 +78,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                     final user = AppUser.fromMap(data, uid);
 
                     return ListTile(
-                      leading: CircleAvatar(child: Icon(Icons.person)),
+                      leading: const CircleAvatar(child: Icon(Icons.person)),
                       title: Text(user.fullName),
                       subtitle: Text(user.email),
                       trailing: Row(
@@ -89,32 +89,30 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(width: 8),
-                          if (user.uid != currentAdmin.uid) ...[
-                            if (user.role != 'admin')
-                              IconButton(
-                                tooltip: 'Yöneticiliğe yükselt',
-                                icon: const Icon(Icons.arrow_upward),
-                                onPressed:
-                                    () => _changeUserRole(
-                                      context,
-                                      ref,
-                                      user.uid,
-                                      'admin',
-                                    ),
-                              ),
-                            if (user.role == 'admin')
-                              IconButton(
-                                tooltip: 'Yöneticilikten düşür',
-                                icon: const Icon(Icons.arrow_downward),
-                                onPressed:
-                                    () => _changeUserRole(
-                                      context,
-                                      ref,
-                                      user.uid,
-                                      'user',
-                                    ),
-                              ),
-                          ],
+                          if (user.uid != currentAdmin.uid)
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert),
+                              onSelected: (value) {
+                                if (value == 'make_admin') {
+                                  _changeUserRole(context, ref, uid, 'admin');
+                                } else if (value == 'make_user') {
+                                  _changeUserRole(context, ref, uid, 'user');
+                                }
+                              },
+                              itemBuilder:
+                                  (ctx) => [
+                                    if (user.role != 'admin')
+                                      const PopupMenuItem(
+                                        value: 'make_admin',
+                                        child: Text('Yönetici yap'),
+                                      ),
+                                    if (user.role == 'admin')
+                                      const PopupMenuItem(
+                                        value: 'make_user',
+                                        child: Text('Yöneticiliği kaldır'),
+                                      ),
+                                  ],
+                            ),
                         ],
                       ),
                     );
