@@ -17,7 +17,6 @@ class MapPage extends ConsumerStatefulWidget {
 class _MapPageState extends ConsumerState<MapPage> {
   GoogleMapController? _mapController;
   AppNotification? _selectedNotification;
-  String? _selectedNotificationId;
   LatLng? _lastUserPosition;
 
   static const _initialPosition = CameraPosition(
@@ -105,7 +104,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 },
                 onTap: (_) {
                   setState(() {
-                    _selectedNotificationId = null;
+                    _selectedNotification = null;
                   });
                 },
               );
