@@ -86,12 +86,24 @@ class NotificationRepository {
   Future<void> updateNotificationStatus({
     required String notificationId,
     required NotificationStatus newStatus,
+    String? adminId,
+    String? adminName,
   }) async {
     try {
       await _notificationsCollection.doc(notificationId).update({
         'status': newStatus.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      // Log admin action
+      if (adminId != null || adminName != null) {
+        await _logAdminAction(
+          adminId: adminId,
+          adminName: adminName,
+          action: 'update_status',
+          notificationId: notificationId,
+          details: {'newStatus': newStatus.name},
+        );
+      }
     } catch (e) {
       throw Exception('Bildirim durumu güncellenemedi: $e');
     }
@@ -101,12 +113,24 @@ class NotificationRepository {
   Future<void> updateNotificationContent({
     required String notificationId,
     required String content,
+    String? adminId,
+    String? adminName,
   }) async {
     try {
       await _notificationsCollection.doc(notificationId).update({
         'content': content,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      // Log admin action
+      if (adminId != null || adminName != null) {
+        await _logAdminAction(
+          adminId: adminId,
+          adminName: adminName,
+          action: 'update_content',
+          notificationId: notificationId,
+          details: {'contentLength': content.length},
+        );
+      }
     } catch (e) {
       throw Exception('Bildirim içeriği güncellenemedi: $e');
     }
@@ -222,9 +246,21 @@ class NotificationRepository {
   }
 
   /// Bildirimi sil (Admin için - opsiyonel)
-  Future<void> deleteNotification(String notificationId) async {
+  Future<void> deleteNotification(
+    String notificationId, {
+    String? adminId,
+    String? adminName,
+  }) async {
     try {
       await _notificationsCollection.doc(notificationId).delete();
+      // Log deletion with optional admin info
+      await _logAdminAction(
+        adminId: adminId,
+        adminName: adminName,
+        action: 'delete_notification',
+        notificationId: notificationId,
+        details: null,
+      );
     } catch (e) {
       throw Exception('Bildirim silinemedi: $e');
     }
@@ -253,9 +289,47 @@ class NotificationRepository {
         'followedBy': [],
         'isEmergency': true, // Flag olarak işaretle
       });
+      // Log emergency publish
+      await _logAdminAction(
+        adminId: adminId,
+        adminName: adminName,
+        action: 'create_emergency',
+        notificationId: docRef.id,
+        details: {'title': title},
+      );
+
+      // Also write a marker for Cloud Functions to pick up and send FCM
+      await firestore.collection('fcm_messages').add({
+        'notificationId': docRef.id,
+        'title': title,
+        'content': content,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
       return docRef.id;
     } catch (e) {
       throw Exception('Acil bildirim yayınlanamadı: $e');
+    }
+  }
+
+  /// İç denetim (audit) kaydı ekler
+  Future<void> _logAdminAction({
+    String? adminId,
+    String? adminName,
+    required String action,
+    String? notificationId,
+    Map<String, dynamic>? details,
+  }) async {
+    try {
+      await firestore.collection('admin_actions').add({
+        'adminId': adminId,
+        'adminName': adminName,
+        'action': action,
+        'notificationId': notificationId,
+        'details': details,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Logging failure should not break main flow
     }
   }
 }

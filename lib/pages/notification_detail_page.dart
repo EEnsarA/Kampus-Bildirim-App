@@ -511,9 +511,14 @@ class _NotificationDetailPageState
     try {
       // Repository aracılığıyla Firestore'u güncelle
       final repository = ref.read(notificationRepositoryProvider);
+      final admin = ref
+          .read(userProfileProvider)
+          .maybeWhen(data: (u) => u, orElse: () => null);
       await repository.updateNotificationStatus(
         notificationId: notification.id,
         newStatus: newStatus,
+        adminId: admin?.uid,
+        adminName: admin?.fullName,
       );
 
       // Başarılı olduysa kullanıcıya bildir
@@ -614,9 +619,14 @@ class _NotificationDetailPageState
 
       try {
         final repository = ref.read(notificationRepositoryProvider);
+        final admin = ref
+            .read(userProfileProvider)
+            .maybeWhen(data: (u) => u, orElse: () => null);
         await repository.updateNotificationContent(
           notificationId: notification.id,
           content: newContent,
+          adminId: admin?.uid,
+          adminName: admin?.fullName,
         );
         if (mounted) showCustomToast(context, 'Açıklama güncellendi');
         // Yeniden yükle
@@ -657,7 +667,14 @@ class _NotificationDetailPageState
     if (confirmed == true) {
       try {
         final repository = ref.read(notificationRepositoryProvider);
-        await repository.deleteNotification(notification.id);
+        final admin = ref
+            .read(userProfileProvider)
+            .maybeWhen(data: (u) => u, orElse: () => null);
+        await repository.deleteNotification(
+          notification.id,
+          adminId: admin?.uid,
+          adminName: admin?.fullName,
+        );
         if (mounted) {
           showCustomToast(context, 'Bildirim sonlandırıldı');
           Navigator.of(context).pop();

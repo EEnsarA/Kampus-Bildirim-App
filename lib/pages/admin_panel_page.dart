@@ -533,9 +533,14 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
   ) async {
     try {
       final repository = ref.read(notificationRepositoryProvider);
+      final admin = ref
+          .read(userProfileProvider)
+          .maybeWhen(data: (u) => u, orElse: () => null);
       await repository.updateNotificationStatus(
         notificationId: notification.id,
         newStatus: newStatus,
+        adminId: admin?.uid,
+        adminName: admin?.fullName,
       );
 
       if (mounted) {
