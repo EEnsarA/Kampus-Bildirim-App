@@ -225,8 +225,16 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: notificationsAsync.when(
-                                loading: () => const Center(child: CircularProgressIndicator()),
-                                error: (err, stack) => Center(child: Text('Bildirimler yüklenemedi: $err')),
+                                loading:
+                                    () => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                error:
+                                    (err, stack) => Center(
+                                      child: Text(
+                                        'Bildirimler yüklenemedi: $err',
+                                      ),
+                                    ),
                                 data: (notifications) {
                                   if (notifications.isEmpty) {
                                     return Card(
@@ -254,7 +262,11 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                                     itemCount: notifications.length,
                                     itemBuilder: (context, index) {
                                       final notification = notifications[index];
-                                      return _buildNotificationAdminCard(context, ref, notification);
+                                      return _buildNotificationAdminCard(
+                                        context,
+                                        ref,
+                                        notification,
+                                      );
                                     },
                                   );
                                 },
