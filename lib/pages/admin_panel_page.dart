@@ -8,6 +8,7 @@ import 'package:kampus_bildirim/models/app_user.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Admin paneli sayfası
 /// Sadece admin rol'ü olan kullanıcılar erişebilir
@@ -31,6 +32,117 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     _emergencyTitleController.dispose();
     _emergencyContentController.dispose();
     super.dispose();
+  }
+
+  /// Basit kullanıcı yönetim arayüzü: kullanıcıları listeler ve role değiştirir
+  Widget _buildUserManagementSection(AppUser currentAdmin) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Kullanıcı Yönetimi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .orderBy('name')
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('Kullanıcı bulunamadı.'),
+                  );
+                }
+
+                final docs = snapshot.data!.docs;
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: docs.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final uid = docs[index].id;
+                    final user = AppUser.fromMap(data, uid);
+
+                    return ListTile(
+                      leading: CircleAvatar(child: Icon(Icons.person)),
+                      title: Text(user.fullName),
+                      subtitle: Text(user.email),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            user.role.toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(width: 8),
+                          if (user.uid != currentAdmin.uid) ...[
+                            if (user.role != 'admin')
+                              IconButton(
+                                tooltip: 'Yöneticiliğe yükselt',
+                                icon: const Icon(Icons.arrow_upward),
+                                onPressed:
+                                    () => _changeUserRole(
+                                      context,
+                                      ref,
+                                      user.uid,
+                                      'admin',
+                                    ),
+                              ),
+                            if (user.role == 'admin')
+                              IconButton(
+                                tooltip: 'Yöneticilikten düşür',
+                                icon: const Icon(Icons.arrow_downward),
+                                onPressed:
+                                    () => _changeUserRole(
+                                      context,
+                                      ref,
+                                      user.uid,
+                                      'user',
+                                    ),
+                              ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Kullanıcı rolünü güncelle (basit update)
+  Future<void> _changeUserRole(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    String newRole,
+  ) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'role': newRole,
+      });
+      if (mounted) showCustomToast(context, 'Kullanıcı rolü güncellendi');
+    } catch (e) {
+      if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
+    }
   }
 
   @override
@@ -78,67 +190,89 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
             );
           }
 
-          // Admin ise paneli göster
+          // Admin ise paneli göster: Acil duyuru üstte sabit, alt kısımda iki sekme
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Acil Bildirim Gönderme Modülü
+                // Acil Bildirim Gönderme Modülü (her zaman görünür)
                 _buildEmergencyNotificationSection(user),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-                // Bildirimleri Yönet Bölümü
-                const Text(
-                  'Tüm Bildirimler',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
+                // Sekmeli yönetim: Bildirimler / Kullanıcılar
+                DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const TabBar(
+                        labelColor: Colors.black,
+                        indicatorColor: Colors.red,
+                        tabs: [
+                          Tab(text: 'Bildirim Yönetimi'),
+                          Tab(text: 'Kullanıcı Yönetimi'),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        // Yeterli yüksekliği vererek içeriğin kaydırılmasını sağla
+                        height: 600,
+                        child: TabBarView(
+                          children: [
+                            // Bildirim yönetimi sekmesi
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: notificationsAsync.when(
+                                loading: () => const Center(child: CircularProgressIndicator()),
+                                error: (err, stack) => Center(child: Text('Bildirimler yüklenemedi: $err')),
+                                data: (notifications) {
+                                  if (notifications.isEmpty) {
+                                    return Card(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24.0),
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Icon(
+                                                Icons.inbox,
+                                                size: 48,
+                                                color: Colors.grey.shade400,
+                                              ),
+                                              const SizedBox(height: 12),
+                                              const Text('Henüz bildirim yok'),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
 
-                // Bildirimleri listele
-                notificationsAsync.when(
-                  loading:
-                      () => const Center(child: CircularProgressIndicator()),
-                  error:
-                      (err, stack) =>
-                          Center(child: Text('Bildirimler yüklenemedi: $err')),
-                  data: (notifications) {
-                    if (notifications.isEmpty) {
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.inbox,
-                                  size: 48,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 12),
-                                const Text('Henüz bildirim yok'),
-                              ],
+                                  return ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    itemCount: notifications.length,
+                                    itemBuilder: (context, index) {
+                                      final notification = notifications[index];
+                                      return _buildNotificationAdminCard(context, ref, notification);
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    }
 
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: notifications.length,
-                      itemBuilder: (context, index) {
-                        final notification = notifications[index];
-                        return _buildNotificationAdminCard(
-                          context,
-                          ref,
-                          notification,
-                        );
-                      },
-                    );
-                  },
+                            // Kullanıcı yönetimi sekmesi
+                            SingleChildScrollView(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: _buildUserManagementSection(user),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

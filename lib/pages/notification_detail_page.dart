@@ -402,6 +402,37 @@ class _NotificationDetailPageState
                             ],
                           ),
                           const SizedBox(height: 12),
+                          // Düzenle ve Sonlandır butonları (admin veri UI'sine bağlı)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed:
+                                      () => _showEditContentDialog(
+                                        context,
+                                        ref,
+                                        notification,
+                                      ),
+                                  child: const Text('Açıklamayı Düzenle'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade600,
+                                  ),
+                                  onPressed:
+                                      () => _confirmAndDeleteNotification(
+                                        context,
+                                        ref,
+                                        notification,
+                                      ),
+                                  child: const Text('Bildirimi Sonlandır'),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
 
