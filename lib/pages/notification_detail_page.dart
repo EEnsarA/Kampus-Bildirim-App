@@ -49,6 +49,7 @@ class _NotificationDetailPageState
                     color: Colors.red.shade300,
                   ),
                   const SizedBox(height: 16),
+                  const SizedBox.shrink(),
                   Text('Bildirim yüklenemedi: $err'),
                 ],
               ),
@@ -536,6 +537,102 @@ class _NotificationDetailPageState
     } catch (e) {
       if (mounted) {
         showCustomToast(context, 'Hata: $e', isError: true);
+      }
+    }
+  }
+
+  /// Admin için açıklamayı düzenleme diyaloğu
+  Future<void> _showEditContentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AppNotification notification,
+  ) async {
+    final TextEditingController controller = TextEditingController(
+      text: notification.content,
+    );
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Açıklamayı Düzenle'),
+            content: TextField(
+              controller: controller,
+              maxLines: 6,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Kaydet'),
+              ),
+            ],
+          ),
+    );
+
+    if (result == true) {
+      final newContent = controller.text.trim();
+      if (newContent.isEmpty) {
+        showCustomToast(context, 'Açıklama boş olamaz', isError: true);
+        return;
+      }
+
+      try {
+        final repository = ref.read(notificationRepositoryProvider);
+        await repository.updateNotificationContent(
+          notificationId: notification.id,
+          content: newContent,
+        );
+        if (mounted) showCustomToast(context, 'Açıklama güncellendi');
+        // Yeniden yükle
+        ref.invalidate(notificationDetailProvider(notification.id));
+      } catch (e) {
+        if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
+      }
+    }
+  }
+
+  /// Admin tarafından bildirimi sonlandırma (silme) onayı
+  Future<void> _confirmAndDeleteNotification(
+    BuildContext context,
+    WidgetRef ref,
+    AppNotification notification,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Bildirimi Sonlandır'),
+            content: const Text(
+              'Bu bildirimi sonlandırmak istediğinize emin misiniz? Bu işlem geri alınamaz.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Hayır'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Evet'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final repository = ref.read(notificationRepositoryProvider);
+        await repository.deleteNotification(notification.id);
+        if (mounted) {
+          showCustomToast(context, 'Bildirim sonlandırıldı');
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) showCustomToast(context, 'Hata: $e', isError: true);
       }
     }
   }
