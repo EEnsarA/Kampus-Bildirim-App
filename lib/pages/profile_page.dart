@@ -166,11 +166,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     subtitle: const Text("İlgilendiğin gönderileri gör"),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Henüz takip edilen bildirim yok."),
-                        ),
-                      );
+                      context.push('/followed');
                     },
                   ),
                 ),

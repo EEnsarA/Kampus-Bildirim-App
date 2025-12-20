@@ -5,6 +5,7 @@ import 'package:kampus_bildirim/pages/admin_panel_page.dart';
 import 'package:kampus_bildirim/pages/map_page.dart';
 import 'package:kampus_bildirim/pages/notification_detail_page.dart';
 import 'package:kampus_bildirim/pages/profile_page.dart';
+import 'package:kampus_bildirim/pages/followed_notifications_page.dart';
 import '../pages/login_page.dart';
 import '../pages/home_page.dart';
 import '../pages/splash_page.dart';
@@ -32,6 +33,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final notificationId = state.pathParameters['id']!;
           return NotificationDetailPage(notificationId: notificationId);
         },
+      ),
+      GoRoute(
+        path: '/followed',
+        builder: (context, state) => const FollowedNotificationsPage(),
       ),
       GoRoute(
         path: "/admin",
