@@ -8,9 +8,7 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/services/location_service.dart';
 
 class MapPage extends ConsumerStatefulWidget {
-  final AppNotification? targetNotification;
-
-  const MapPage({super.key, this.targetNotification});
+  const MapPage({super.key});
 
   @override
   ConsumerState<MapPage> createState() => _MapPageState();
@@ -29,9 +27,6 @@ class _MapPageState extends ConsumerState<MapPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.targetNotification != null) {
-      _selectedNotification = widget.targetNotification;
-    }
   }
 
   @override
@@ -40,24 +35,13 @@ class _MapPageState extends ConsumerState<MapPage> {
     super.dispose();
   }
 
-  void _goToNotificationLocation(AppNotification notification) {
-    _mapController?.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(notification.latitude, notification.longitude),
-          zoom: 18,
-        ),
-      ),
-    );
-  }
-
   Future<void> _goToUserLocation() async {
     LatLng targetPos;
     if (_lastUserPosition != null) {
       targetPos = _lastUserPosition!;
       _mapController?.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(target: targetPos, zoom: 18),
+          CameraPosition(target: targetPos, zoom: 15),
         ),
       );
     } else {
@@ -72,6 +56,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           ),
         );
       } catch (e) {
+        // Konum alınamazsa sessiz kalabilir veya toast gösterebiliriz
         debugPrint("Konuma gidilemedi: $e");
       }
     }
@@ -115,11 +100,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 zoomControlsEnabled: false,
                 onMapCreated: (controller) {
                   _mapController = controller;
-                  if (widget.targetNotification != null) {
-                    _goToNotificationLocation(widget.targetNotification!);
-                  } else {
-                    _goToUserLocation();
-                  }
+                  _goToUserLocation();
                 },
                 onTap: (_) {
                   setState(() {
@@ -166,8 +147,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 notification: _selectedNotification!,
                 onDetailPressed: () {
                   context.push(
-                    "/notification_detail",
-                    extra: _selectedNotification,
+                    '/notification-detail/${_selectedNotification!.id}',
                   );
                 },
               ),

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
+import 'package:kampus_bildirim/repository/notification_repository.dart';
 import 'package:kampus_bildirim/services/location_service.dart';
 import 'package:kampus_bildirim/services/store_img_service.dart';
 
@@ -112,27 +112,20 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
         );
       }
 
-      final docRef =
-          FirebaseFirestore.instance.collection('notifications').doc();
+      final repository = ref.read(notificationRepositoryProvider);
 
-      final newNotification = AppNotification(
-        id: docRef.id,
+      // Repository üzerinden bildirim oluştur
+      await repository.createNotification(
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         type: _selectedType,
-        imageUrl: imageUrl,
-
         latitude: _latitude ?? 39.9042,
         longitude: _longitude ?? 32.8642,
-
         senderId: user.uid,
-        senderName: user.name,
+        senderName: user.fullName,
         department: user.department,
-
-        createdAt: DateTime.now(),
+        imageUrl: imageUrl,
       );
-
-      await docRef.set(newNotification.toMap());
 
       if (mounted) {
         FocusScope.of(context).unfocus();
