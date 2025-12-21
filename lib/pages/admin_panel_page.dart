@@ -9,6 +9,7 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kampus_bildirim/constants/app_colors.dart';
 import 'admin_actions_page.dart';
 
 /// Admin paneli sayfası
@@ -38,7 +39,8 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
   /// Basit kullanıcı yönetim arayüzü: kullanıcıları listeler ve role değiştirir
   Widget _buildUserManagementSection(AppUser currentAdmin) {
     return Card(
-      elevation: 1,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -153,10 +155,20 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Admin Paneli'),
-        elevation: 1,
+        title: const Text(
+          'Admin Paneli',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black87,
         centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey.shade200, height: 1.0),
+        ),
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -216,14 +228,25 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                                   builder: (_) => const AdminActionsPage(),
                                 ),
                               ),
-                          icon: const Icon(Icons.history),
-                          label: const Text('İşlem Kayıtları'),
+                          icon: Icon(
+                            Icons.history,
+                            color: AppColors.primaryColor,
+                          ),
+                          label: Text(
+                            'İşlem Kayıtları',
+                            style: TextStyle(color: AppColors.primaryColor),
+                          ),
                         ),
                       ),
-                      const TabBar(
-                        labelColor: Colors.black,
-                        indicatorColor: Colors.red,
-                        tabs: [
+                      TabBar(
+                        labelColor: AppColors.primaryColor,
+                        unselectedLabelColor: Colors.grey.shade600,
+                        indicatorColor: AppColors.primaryColor,
+                        indicatorWeight: 3,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        tabs: const [
                           Tab(text: 'Bildirim Yönetimi'),
                           Tab(text: 'Kullanıcı Yönetimi'),
                         ],
@@ -310,7 +333,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
   /// Acil bildirim gönderme formunu oluşturur
   Widget _buildEmergencyNotificationSection(AppUser user) {
     return Card(
-      elevation: 2,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: Colors.red.shade50,
       child: Padding(
@@ -398,7 +421,9 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
   ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -499,6 +524,15 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
                 onPressed:
                     () =>
                         context.push('/notification-detail/${notification.id}'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryColor,
+                  side: BorderSide(
+                    color: AppColors.primaryColor.withValues(alpha: 0.5),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 child: const Text('Detaylarını Gör'),
               ),
             ),
