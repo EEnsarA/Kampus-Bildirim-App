@@ -1,1 +1,27 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"kampus-bildirim-app","appId":"1:639025265086:android:ced94ca9ccc8bb502ee1ef","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"kampus-bildirim-app","configurations":{"android":"1:639025265086:android:ced94ca9ccc8bb502ee1ef","ios":"1:639025265086:ios:70989bc6b31f408b2ee1ef","web":"1:639025265086:web:90f3a4a64149e3902ee1ef"}}}}}}
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "kampus-bildirim-app",
+          "appId": "1:639025265086:android:ced94ca9ccc8bb502ee1ef",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "kampus-bildirim-app",
+          "configurations": {
+            "android": "1:639025265086:android:ced94ca9ccc8bb502ee1ef",
+            "ios": "1:639025265086:ios:70989bc6b31f408b2ee1ef",
+            "web": "1:639025265086:web:90f3a4a64149e3902ee1ef"
+          }
+        }
+      }
+    }
+  }
+}

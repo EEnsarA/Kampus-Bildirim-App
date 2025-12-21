@@ -6,38 +6,141 @@ import 'package:kampus_bildirim/constants/app_colors.dart';
 import 'package:kampus_bildirim/firebase_options.dart';
 import 'package:kampus_bildirim/routes/app_router.dart';
 
+// Global navigator key for showing snackbars from anywhere
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
+// Background message handler - must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Background'da gelen mesajlar otomatik olarak sistem tarafından gösterilir
+  debugPrint('Background FCM: ${message.notification?.title}');
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Background message handler'ı kaydet
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends ConsumerWidget {
+class MainApp extends ConsumerStatefulWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Initialize Firebase Messaging and subscribe to topic 'all' for emergency broadcasts
-    // Wrapped in try/catch so tests (which may not call Firebase.initializeApp) don't fail.
-    try {
-      FirebaseMessaging.instance.requestPermission();
-      FirebaseMessaging.instance.subscribeToTopic('all');
+  ConsumerState<MainApp> createState() => _MainAppState();
+}
 
-      // Handle foreground messages (debug/log only)
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        // Minimal handling: print for now; replace with local notification logic later
-        // ignore: avoid_print
-        print(
-          'FCM message received: ${message.notification?.title} - ${message.notification?.body}',
-        );
-      });
-    } catch (_) {
-      // If Firebase isn't initialized (e.g., in widget tests), ignore FCM setup.
+class _MainAppState extends ConsumerState<MainApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupFCM();
+  }
+
+  Future<void> _setupFCM() async {
+    try {
+      // İzin iste
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        criticalAlert: true,
+      );
+      debugPrint('FCM Permission: ${settings.authorizationStatus}');
+
+      // 'all' topic'ine subscribe ol
+      await FirebaseMessaging.instance.subscribeToTopic('all');
+      debugPrint('Subscribed to topic: all');
+
+      // Foreground mesajlarını dinle
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+      // Uygulama kapalıyken tıklanan bildirimleri dinle
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+
+      // Uygulama tamamen kapalıyken açılan bildirim
+      final initialMessage =
+          await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessageOpenedApp(initialMessage);
+      }
+    } catch (e) {
+      debugPrint('FCM setup error: $e');
     }
-    //navigation işlemleri için routerProvider
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    // Uygulama açıkken gelen bildirimi SnackBar ile göster
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.warning_amber, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    notification.title ?? 'Bildirim',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            if (notification.body != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                notification.body!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+        backgroundColor: Colors.red.shade700,
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Görüntüle',
+          textColor: Colors.white,
+          onPressed: () {
+            // Bildirim detayına git
+            final notificationId = message.data['notificationId'];
+            if (notificationId != null && notificationId.isNotEmpty) {
+              ref
+                  .read(routerProvider)
+                  .push('/notification-detail/$notificationId');
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _handleMessageOpenedApp(RemoteMessage message) {
+    // Bildirime tıklanınca ilgili sayfaya yönlendir
+    final notificationId = message.data['notificationId'];
+    if (notificationId != null && notificationId.isNotEmpty) {
+      ref.read(routerProvider).push('/notification-detail/$notificationId');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       title: 'Kampüs Bildirim',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -48,7 +151,6 @@ class MainApp extends ConsumerWidget {
           primary: AppColors.primaryColor,
           secondary: AppColors.secondaryColor,
         ),
-
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
