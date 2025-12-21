@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/components/status_tag.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
@@ -28,6 +29,10 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
       TextEditingController();
   final TextEditingController _emergencyContentController =
       TextEditingController();
+
+  // Acil duyuru için konum (varsayılan: kampüs merkezi)
+  static const _defaultCampusLocation = LatLng(39.9042, 32.8642);
+  LatLng _emergencyLocation = _defaultCampusLocation;
 
   @override
   void dispose() {
@@ -390,6 +395,42 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
               minLines: 3,
               maxLines: 5,
             ),
+            const SizedBox(height: 12),
+
+            // Konum Seçme Butonu
+            InkWell(
+              onTap: () => _showLocationPicker(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.red.shade600),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Konum',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            'Lat: ${_emergencyLocation.latitude.toStringAsFixed(4)}, '
+                            'Lng: ${_emergencyLocation.longitude.toStringAsFixed(4)}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.edit_location_alt, color: Colors.grey.shade600),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
 
             // Gönder Butonu
@@ -597,6 +638,67 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     }
   }
 
+  /// Haritadan konum seçme dialog'u
+  Future<void> _showLocationPicker() async {
+    LatLng selectedLocation = _emergencyLocation;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Konum Seç'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: selectedLocation,
+                    zoom: 15,
+                  ),
+                  onTap: (LatLng position) {
+                    setDialogState(() {
+                      selectedLocation = position;
+                    });
+                  },
+                  markers: {
+                    Marker(
+                      markerId: const MarkerId('selected'),
+                      position: selectedLocation,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed,
+                      ),
+                    ),
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _emergencyLocation = selectedLocation;
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Seç'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   /// Acil duyuru yayınla
   /// Tüm kullanıcılara gidecek önemli bildirim
   Future<void> _sendEmergencyNotification(WidgetRef ref, AppUser admin) async {
@@ -619,11 +721,17 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
         content: _emergencyContentController.text.trim(),
         adminId: admin.uid,
         adminName: admin.fullName,
+        latitude: _emergencyLocation.latitude,
+        longitude: _emergencyLocation.longitude,
       );
       if (!mounted) return;
       // Form temizle
       _emergencyTitleController.clear();
       _emergencyContentController.clear();
+      // Konumu varsayılana sıfırla
+      setState(() {
+        _emergencyLocation = _defaultCampusLocation;
+      });
 
       // Başarı mesajı göster
       showCustomToast(

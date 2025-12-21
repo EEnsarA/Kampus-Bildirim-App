@@ -335,6 +335,8 @@ class NotificationRepository {
     required String content,
     required String adminId,
     required String adminName,
+    double latitude = 39.9042, // Varsayılan: kampüs merkezi
+    double longitude = 32.8642,
   }) async {
     try {
       final docRef = await _notificationsCollection.add({
@@ -342,8 +344,8 @@ class NotificationRepository {
         'content': content,
         'type': NotificationType.emergency.name,
         'status': NotificationStatus.open.name,
-        'latitude': 0.0, // Acil bildirimler konum spesifik değil
-        'longitude': 0.0,
+        'latitude': latitude,
+        'longitude': longitude,
         'senderId': adminId,
         'senderName': adminName,
         'department': 'YÖNETİM',

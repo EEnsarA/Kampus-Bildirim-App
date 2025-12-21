@@ -554,8 +554,8 @@ class _NotificationDetailPageState
 
       // Listeyi otomatik yenile (Riverpod stream güncellemesini tetikle)
       if (!mounted) return;
-      // Use refresh to re-subscribe / refresh the provider instead of watch
-      ref.refresh(notificationsProvider);
+      // Use invalidate to re-subscribe / refresh the provider
+      ref.invalidate(notificationsProvider);
     } catch (e) {
       if (!mounted) return;
       showCustomToast(this.context, 'Hata: $e', isError: true);
