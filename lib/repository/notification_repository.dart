@@ -228,6 +228,9 @@ class NotificationRepository {
   }
 
   /// Kullanıcının takip ettiği bildirimleri getir
+  /// NOT: Bu sorgu Firestore'da composite index gerektirir:
+  /// Collection: notifications
+  /// Fields: followedBy (Arrays) + createdAt (Descending)
   Stream<List<AppNotification>> getFollowedNotificationsStream(String userId) {
     return _notificationsCollection
         .where('followedBy', arrayContains: userId)

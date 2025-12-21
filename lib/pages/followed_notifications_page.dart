@@ -15,22 +15,11 @@ class FollowedNotificationsPage extends ConsumerStatefulWidget {
 
 class _FollowedNotificationsPageState
     extends ConsumerState<FollowedNotificationsPage> {
-  String? _cachedUserId;
+  String? _userId;
 
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
-
-    // Kullanıcı yüklendikten sonra userId'yi cache'le
-    // Bu sayede sonraki rebuild'lerde loading döngüsüne girilmez
-    if (userAsync.hasValue && userAsync.value != null) {
-      _cachedUserId = userAsync.value!.uid;
-    }
-
-    // Eğer cached userId varsa ve userAsync hala loading ise, cached değeri kullan
-    if (_cachedUserId != null) {
-      return _buildContent(context, _cachedUserId!);
-    }
 
     return userAsync.when(
       loading:
@@ -40,17 +29,24 @@ class _FollowedNotificationsPageState
       data: (user) {
         if (user == null) {
           return const Scaffold(
-            body: Center(child: Text('Kullanıcı bulunamadı')),
+            body: Center(child: Text('Lütfen giriş yapın')),
           );
         }
-        _cachedUserId = user.uid;
-        return _buildContent(context, user.uid);
+
+        // userId değişmediği sürece aynı provider'ı kullan
+        _userId = user.uid;
+
+        return _buildNotificationsList(context);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, String userId) {
-    final followedAsync = ref.watch(followedNotificationsProvider(userId));
+  Widget _buildNotificationsList(BuildContext context) {
+    if (_userId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final followedAsync = ref.watch(followedNotificationsProvider(_userId!));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Takip Ettiklerim')),
@@ -65,7 +61,7 @@ class _FollowedNotificationsPageState
           }
 
           return ListView.builder(
-            key: PageStorageKey('followed-$userId'),
+            key: PageStorageKey('followed-$_userId'),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             itemCount: list.length,
             itemBuilder: (context, index) {

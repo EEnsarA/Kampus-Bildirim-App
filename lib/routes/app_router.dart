@@ -22,10 +22,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/add-notification',
         builder: (context, state) => const AddNotificationPage(),
       ),
-      GoRoute(
-        path: "/map",
-        builder: (context, state) => const MapPage(),
-      ),
+      GoRoute(path: "/map", builder: (context, state) => const MapPage()),
       GoRoute(
         path: "/profile",
         builder: (context, state) => const ProfilePage(),

@@ -19,9 +19,10 @@ final notificationDetailProvider =
     });
 
 // Kullanıcının takip ettiği bildirimleri getir
+// NOT: autoDispose kaldırıldı - sayfa geçişlerinde sürekli yeniden oluşturulması döngüye neden oluyordu
 final followedNotificationsProvider =
     StreamProvider.family<List<AppNotification>, String>((ref, userId) {
-      final repository = ref.watch(notificationRepositoryProvider);
+      final repository = ref.read(notificationRepositoryProvider);
       return repository.getFollowedNotificationsStream(userId);
     });
 
