@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kampus_bildirim/components/notification_status_badge.dart';
 import 'package:kampus_bildirim/models/app_user.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
@@ -113,24 +114,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         size: 38,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
-
-                  // 2. Veri Geldi
                   data: (user) {
-                    // A. Kullanıcı var ve Resmi Var -> RESMİ GÖSTER 🖼️
                     if (user != null &&
                         user.avatarUrl != null &&
                         user.avatarUrl!.isNotEmpty) {
                       return CircleAvatar(
-                        backgroundColor:
-                            Colors
-                                .grey
-                                .shade200, // Resim yüklenene kadar gri zemin
+                        backgroundColor: Colors.grey.shade200,
                         backgroundImage: NetworkImage(user.avatarUrl!),
-                        radius: 19, // Size 38'e denk gelmesi için yarıçap
+                        radius: 19,
                       );
                     }
-
-                    // B. Resim Yok -> ESKİ İKONU GÖSTER 👤
                     return Icon(
                       Icons.account_circle,
                       size: 38,
@@ -166,7 +159,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade300, // Hafif gri arka plan
+                  fillColor: Colors.grey.shade300,
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -279,30 +272,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ],
                       ),
 
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: notification.statusColor.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: notification.statusColor.withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          notification.statusLabel,
-                          style: TextStyle(
-                            color: notification.statusColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      trailing: NotificationStatusBadge(
+                        notification: notification,
                       ),
 
                       onTap: () {

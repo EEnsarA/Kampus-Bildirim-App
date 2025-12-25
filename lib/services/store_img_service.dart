@@ -23,8 +23,8 @@ class StoreImgService {
     String userId,
   ) async {
     try {
-      // Fark 1: Klasör 'profile_images' oldu
-      // Fark 2: Dosya adı 'userId.jpg' oldu (Böylece üzerine yazar, yer kaplamaz)
+      //  profile_images
+      // Dosya adı 'userId.jpg' üzerine yazaıp yer kaplmaması için aynı
       final ref = FirebaseStorage.instance
           .ref()
           .child("profile_images")

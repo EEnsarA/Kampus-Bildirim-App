@@ -128,12 +128,13 @@ class AppNotification {
     }
   }
 
+  // Color.fromARGB(255, 223, 182, 125);
   Color get statusColor {
     switch (status) {
       case NotificationStatus.open:
-        return Color.fromARGB(255, 223, 182, 125);
+        return const Color.fromARGB(255, 197, 42, 42);
       case NotificationStatus.reviewing:
-        return Colors.orange;
+        return const Color.fromARGB(255, 26, 49, 83);
       case NotificationStatus.resolved:
         return Colors.grey;
     }
