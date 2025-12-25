@@ -42,6 +42,18 @@ class _MainAppState extends ConsumerState<MainApp> {
   void initState() {
     super.initState();
     _setupFCM();
+    _listenToAuthChanges();
+  }
+
+  /// Auth state değişikliğini dinle - kullanıcı giriş yaptığında FCM token kaydet
+  void _listenToAuthChanges() {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Kullanıcı giriş yaptı, FCM token'ı kaydet
+        debugPrint('Auth state changed: User logged in - saving FCM token');
+        _saveFcmToken();
+      }
+    });
   }
 
   Future<void> _setupFCM() async {
