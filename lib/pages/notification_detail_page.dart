@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:kampus_bildirim/components/custom_toast.dart';
-import 'package:kampus_bildirim/components/status_tag.dart';
+
+// Senin bileşenlerin
+import 'package:kampus_bildirim/components/notification_status_badge.dart';
+import 'package:kampus_bildirim/components/sender_info_card.dart';
+import 'package:kampus_bildirim/components/custom_toast.dart'; // Toast mesajı
+
+// Modeller ve Providerlar
 import 'package:kampus_bildirim/models/app_notification.dart';
-import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
+import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 
-/// Bildirimin tüm detaylarını gösteren sayfa
-/// Kullanıcılar bildirimleri takip edebilir, admin'ler durumu güncelleyebilir
 class NotificationDetailPage extends ConsumerStatefulWidget {
+  // Arkadaşının mantığı daha doğru: ID ile alıp taze veri çekeceğiz
   final String notificationId;
 
   const NotificationDetailPage({super.key, required this.notificationId});
@@ -22,508 +27,9 @@ class NotificationDetailPage extends ConsumerStatefulWidget {
 
 class _NotificationDetailPageState
     extends ConsumerState<NotificationDetailPage> {
-  // Kullanıcının bu bildirimi takip edip etmediğini belirten flag
-  bool _isFollowing = false;
+  bool _isFollowing = false; // Takip durumu için
 
-  @override
-  Widget build(BuildContext context) {
-    // Bildirimi ID'ye göre yükle
-    final notificationAsync = ref.watch(
-      notificationDetailProvider(widget.notificationId),
-    );
-    // Giriş yapan kullanıcı bilgilerini al (admin kontrolü için)
-    final userAsync = ref.watch(userProfileProvider);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bildirim Detayları'), elevation: 1),
-      body: notificationAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (err, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red.shade300,
-                  ),
-                  const SizedBox(height: 16),
-                  const SizedBox.shrink(),
-                  Text('Bildirim yüklenemedi: $err'),
-                ],
-              ),
-            ),
-        data: (notification) {
-          if (notification == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.not_interested,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Bildirim bulunamadı'),
-                ],
-              ),
-            );
-          }
-
-          return userAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Hata: $err')),
-            data: (user) {
-              final isAdmin = user?.role == 'admin';
-
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Başlık ve Tür Kartı
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: notification.typeColor.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    notification.typeIcon,
-                                    color: notification.typeColor,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        notification.title,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          StatusTag(
-                                            text: notification.typeLabel,
-                                            color: notification.typeColor,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          StatusTag(
-                                            text: notification.statusLabel,
-                                            color: notification.statusColor,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Bilgi Kartı
-                    Card(
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Bildiren Kişi Bilgisi
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue.shade100,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Tarafından Bildirildi',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        notification.senderName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        notification.department,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            // Tarih
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 20,
-                                  color: Colors.grey.shade600,
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Oluşturulma Tarihi',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDate(notification.createdAt),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Açıklama
-                    const Text(
-                      'Açıklama',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Card(
-                      elevation: 0,
-                      color: Colors.grey.shade50,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.shade200),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          notification.content,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Resim (varsa)
-                    if (notification.imageUrl != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Resim',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              notification.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 200,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.image_not_supported_outlined,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-
-                    // Harita
-                    const Text(
-                      'Konum',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        height: 250,
-                        child: GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: LatLng(
-                              notification.latitude,
-                              notification.longitude,
-                            ),
-                            zoom: 15,
-                          ),
-                          markers: {
-                            Marker(
-                              markerId: const MarkerId('notification'),
-                              position: LatLng(
-                                notification.latitude,
-                                notification.longitude,
-                              ),
-                              infoWindow: InfoWindow(title: notification.title),
-                            ),
-                          },
-                          zoomGesturesEnabled: true,
-                          scrollGesturesEnabled: true,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Admin Kontrolleri (sadece admin görsün)
-                    if (isAdmin)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Divider(),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Admin İşlemleri',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Durum Güncelleme Butonları
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatusButton(
-                                  ref,
-                                  notification,
-                                  NotificationStatus.open,
-                                  'Açık',
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildStatusButton(
-                                  ref,
-                                  notification,
-                                  NotificationStatus.reviewing,
-                                  'İnceleniyor',
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildStatusButton(
-                                  ref,
-                                  notification,
-                                  NotificationStatus.resolved,
-                                  'Çözüldü',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          // Düzenle ve Sonlandır butonları (admin veri UI'sine bağlı)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed:
-                                      () => _showEditContentDialog(
-                                        ref,
-                                        notification,
-                                      ),
-                                  child: const Text('Açıklamayı Düzenle'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red.shade600,
-                                  ),
-                                  onPressed:
-                                      () => _confirmAndDeleteNotification(
-                                        ref,
-                                        notification,
-                                      ),
-                                  child: const Text('Bildirimi Sonlandır'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                    // Takip Et / Çık Butonu
-                    if (user != null)
-                      ElevatedButton.icon(
-                        onPressed:
-                            () => _toggleFollowNotification(
-                              ref,
-                              notification,
-                              user.uid,
-                            ),
-                        icon: Icon(
-                          _isFollowing ? Icons.favorite : Icons.favorite_border,
-                        ),
-                        label: Text(_isFollowing ? 'Takipten Çık' : 'Takip Et'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              _isFollowing
-                                  ? Colors.red.shade400
-                                  : Colors.blue.shade400,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  /// Admin'in bildirimin durumunu değiştirmek için kullandığı buton
-  /// Mevcut duruma göre yeşil gösterilir, diğerleri gri olur
-  Widget _buildStatusButton(
-    WidgetRef ref,
-    AppNotification notification,
-    NotificationStatus status,
-    String label,
-  ) {
-    // Bu butonun geçerli duruma ait olup olmadığını kontrol et
-    final isCurrentStatus = notification.status == status;
-
-    return ElevatedButton(
-      // Zaten bu durumdaysa buton devre dışı olur
-      onPressed:
-          isCurrentStatus
-              ? null
-              : () => _updateNotificationStatus(ref, notification, status),
-      style: ElevatedButton.styleFrom(
-        // Mevcut durum yeşil, diğerleri gri
-        backgroundColor: isCurrentStatus ? Colors.green : Colors.grey.shade300,
-        foregroundColor: isCurrentStatus ? Colors.white : Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 12)),
-    );
-  }
-
-  /// Admin tarafından bildirimin durumunu güncellemek için kullanılan fonksiyon
-  /// Yeni durum Firestore'a kaydedilir ve kullanıcılara bildirim gönderilir
-  Future<void> _updateNotificationStatus(
-    WidgetRef ref,
-    AppNotification notification,
-    NotificationStatus newStatus,
-  ) async {
-    try {
-      // Repository aracılığıyla Firestore'u güncelle
-      final repository = ref.read(notificationRepositoryProvider);
-      final admin = ref
-          .read(userProfileProvider)
-          .maybeWhen(data: (u) => u, orElse: () => null);
-      await repository.updateNotificationStatus(
-        notificationId: notification.id,
-        newStatus: newStatus,
-        adminId: admin?.uid,
-        adminName: admin?.fullName,
-      );
-
-      // Başarılı olduysa kullanıcıya bildir
-      if (!mounted) return;
-      showCustomToast(this.context, 'Bildirim durumu güncelleştirme başarılı.');
-    } catch (e) {
-      // Hata oluşursa toast ile uyar
-      if (!mounted) return;
-      showCustomToast(this.context, 'Hata: $e', isError: true);
-    }
-  }
-
-  /// Kullanıcının bildirimi takip etme/çıkma işlemini yönetir
-  /// Takip ediyor ise kaldırır, etmiyorsa ekler
+  /// --- YENİ EKLENEN TAKİP FONKSİYONU (Arkadaşından aldık) ---
   Future<void> _toggleFollowNotification(
     WidgetRef ref,
     AppNotification notification,
@@ -533,36 +39,99 @@ class _NotificationDetailPageState
       final repository = ref.read(notificationRepositoryProvider);
 
       if (_isFollowing) {
-        // Zaten takip ediyorsa, takipten çık
         await repository.unfollowNotification(
           notificationId: notification.id,
           userId: userId,
         );
         setState(() => _isFollowing = false);
         if (!mounted) return;
-        showCustomToast(this.context, 'Bildirimin takibi sonlandırıldı');
+        showCustomToast(context, 'Bildirimin takibi sonlandırıldı');
       } else {
-        // Takip etmiyorsa, takibe al
         await repository.followNotification(
           notificationId: notification.id,
           userId: userId,
         );
         setState(() => _isFollowing = true);
         if (!mounted) return;
-        showCustomToast(this.context, 'Bildirim takibe alındı ❤️');
+        showCustomToast(context, 'Bildirim takibe alındı ❤️');
       }
 
-      // Listeyi otomatik yenile (Riverpod stream güncellemesini tetikle)
-      if (!mounted) return;
-      // Use invalidate to re-subscribe / refresh the provider
+      // Listeyi yenile
       ref.invalidate(notificationsProvider);
+      // Detayı yenile
+      ref.invalidate(notificationDetailProvider(notification.id));
     } catch (e) {
       if (!mounted) return;
-      showCustomToast(this.context, 'Hata: $e', isError: true);
+      showCustomToast(context, 'Hata: $e', isError: true);
     }
   }
 
-  /// Admin için açıklamayı düzenleme diyaloğu
+  /// Tarih formatlayıcı
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} dakika önce';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} saat önce';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} gün önce';
+    } else {
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    }
+  }
+
+  /// Admin durum güncelleme butonu
+  Widget _buildStatusButton(
+    WidgetRef ref,
+    AppNotification notification,
+    NotificationStatus status,
+    String label,
+  ) {
+    final isCurrentStatus = notification.status == status;
+
+    return ElevatedButton(
+      onPressed:
+          isCurrentStatus
+              ? null
+              : () => _updateNotificationStatus(ref, notification, status),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isCurrentStatus ? Colors.green : Colors.grey.shade300,
+        foregroundColor: isCurrentStatus ? Colors.white : Colors.black,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  /// Admin durum güncelleme fonksiyonu
+  Future<void> _updateNotificationStatus(
+    WidgetRef ref,
+    AppNotification notification,
+    NotificationStatus newStatus,
+  ) async {
+    try {
+      final repository = ref.read(notificationRepositoryProvider);
+      final admin = ref.read(userProfileProvider).value;
+
+      await repository.updateNotificationStatus(
+        notificationId: notification.id,
+        newStatus: newStatus,
+        adminId: admin?.uid,
+        adminName: admin?.fullName,
+      );
+
+      if (!mounted) return;
+      showCustomToast(context, 'Bildirim durumu güncellendi.');
+      ref.invalidate(notificationDetailProvider(notification.id));
+    } catch (e) {
+      if (!mounted) return;
+      showCustomToast(context, 'Hata: $e', isError: true);
+    }
+  }
+
+  /// Admin açıklama düzenleme
   Future<void> _showEditContentDialog(
     WidgetRef ref,
     AppNotification notification,
@@ -596,41 +165,36 @@ class _NotificationDetailPageState
 
     if (result == true) {
       final newContent = controller.text.trim();
-      if (newContent.isEmpty) {
-        if (!mounted) return;
-        showCustomToast(this.context, 'Açıklama boş olamaz', isError: true);
-        return;
-      }
+      if (newContent.isEmpty) return;
 
       try {
         final repository = ref.read(notificationRepositoryProvider);
-        final admin = ref
-            .read(userProfileProvider)
-            .maybeWhen(data: (u) => u, orElse: () => null);
+        final admin = ref.read(userProfileProvider).value;
+
         await repository.updateNotificationContent(
           notificationId: notification.id,
           content: newContent,
           adminId: admin?.uid,
           adminName: admin?.fullName,
         );
+
         if (!mounted) return;
-        showCustomToast(this.context, 'Açıklama güncellendi');
-        // Yeniden yükle
+        showCustomToast(context, 'Açıklama güncellendi');
         ref.invalidate(notificationDetailProvider(notification.id));
       } catch (e) {
         if (!mounted) return;
-        showCustomToast(this.context, 'Hata: $e', isError: true);
+        showCustomToast(context, 'Hata: $e', isError: true);
       }
     }
   }
 
-  /// Admin tarafından bildirimi sonlandırma (silme) onayı
+  /// Admin soft-delete fonksiyonu
   Future<void> _confirmAndDeleteNotification(
     WidgetRef ref,
     AppNotification notification,
   ) async {
     final confirmed = await showDialog<bool>(
-      context: this.context,
+      context: context,
       builder:
           (ctx) => AlertDialog(
             title: const Text('Bildirimi Sonlandır'),
@@ -653,45 +217,375 @@ class _NotificationDetailPageState
     if (confirmed == true) {
       try {
         final repository = ref.read(notificationRepositoryProvider);
-        final admin = ref
-            .read(userProfileProvider)
-            .maybeWhen(data: (u) => u, orElse: () => null);
+        final admin = ref.read(userProfileProvider).value;
+
         await repository.softDeleteNotification(
           notification.id,
           adminId: admin?.uid,
           adminName: admin?.fullName,
         );
+
         if (!mounted) return;
-        showCustomToast(this.context, 'Bildirim sonlandırıldı (soft-delete)');
-        Navigator.of(this.context).pop();
+        showCustomToast(context, 'Bildirim sonlandırıldı.');
+        Navigator.of(context).pop();
       } catch (e) {
         if (!mounted) return;
-        showCustomToast(this.context, 'Hata: $e', isError: true);
+        showCustomToast(context, 'Hata: $e', isError: true);
       }
     }
   }
 
-  /// Tarihi insan tarafından okunabilir formatta gösterir
-  /// Örn: "5 dakika önce", "2 saat önce", "15/12/2025 14:30"
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+  @override
+  Widget build(BuildContext context) {
+    // ID ile veriyi çekiyoruz (Arkadaşının yöntemi)
+    final notificationAsync = ref.watch(
+      notificationDetailProvider(widget.notificationId),
+    );
+    final userAsync = ref.watch(userProfileProvider);
 
-    // Son 1 saat içindeyse dakika cinsinden göster
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} dakika önce';
-    }
-    // Son 1 gün içindeyse saat cinsinden göster
-    else if (difference.inHours < 24) {
-      return '${difference.inHours} saat önce';
-    }
-    // Son 1 hafta içindeyse gün cinsinden göster
-    else if (difference.inDays < 7) {
-      return '${difference.inDays} gün önce';
-    }
-    // Aksi halde tam tarih ve saat göster
-    else {
-      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    }
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          "Bildirim Detayı",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
+
+      // Veri yüklenirken veya hata varsa gösterilecekler
+      body: notificationAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Hata: $err')),
+        data: (notification) {
+          if (notification == null) {
+            return const Center(child: Text("Bildirim bulunamadı."));
+          }
+
+          // Admin kontrolü
+          bool isAdmin = false;
+          final user = userAsync.value;
+          if (user != null && user.role == "admin") {
+            isAdmin = true;
+          }
+
+          // Takip durumunu başlat (Sayfa ilk açıldığında kontrol edilebilir, şimdilik false başlıyor butona basınca değişiyor)
+          // Eğer backend'de "followers" listesi varsa burada _isFollowing = notification.followers.contains(user.uid) gibi bir set işlemi yapılabilir.
+          // Basitlik adına şimdilik manuel bırakıyorum.
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // --- GÖRSEL ALANI (Senin tasarımın) ---
+                          if (notification.imageUrl != null)
+                            Container(
+                              width: double.infinity,
+                              height: 200,
+                              margin: const EdgeInsets.only(bottom: 20),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 10,
+                                  ),
+                                ],
+                                image: DecorationImage(
+                                  image: NetworkImage(notification.imageUrl!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              width: double.infinity,
+                              height: 120,
+                              margin: const EdgeInsets.only(bottom: 20),
+                              decoration: BoxDecoration(
+                                color: notification.typeColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  notification.typeIcon,
+                                  size: 50,
+                                  color: notification.typeColor,
+                                ),
+                              ),
+                            ),
+
+                          // --- BAŞLIK ve TARİH (Senin tasarımın) ---
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              NotificationStatusBadge(
+                                notification: notification,
+                              ),
+                              Text(
+                                _formatDate(notification.createdAt),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          Text(
+                            notification.title,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                notification.typeIcon,
+                                color: notification.typeColor,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                notification.typeLabel.toUpperCase(),
+                                style: TextStyle(
+                                  color: notification.typeColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 5),
+                          const Divider(),
+                          const SizedBox(height: 5),
+
+                          // --- İÇERİK ---
+                          Text(
+                            notification.content,
+                            style: const TextStyle(fontSize: 16, height: 1.6),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // --- HARİTA (Arkadaşının kodu ama senin tasarımın içinde) ---
+                          const Text(
+                            'Konum',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              height: 200,
+                              child: GoogleMap(
+                                initialCameraPosition: CameraPosition(
+                                  target: LatLng(
+                                    notification.latitude,
+                                    notification.longitude,
+                                  ),
+                                  zoom: 15,
+                                ),
+                                markers: {
+                                  Marker(
+                                    markerId: const MarkerId('notification'),
+                                    position: LatLng(
+                                      notification.latitude,
+                                      notification.longitude,
+                                    ),
+                                    infoWindow: InfoWindow(
+                                      title: notification.title,
+                                    ),
+                                  ),
+                                },
+                                zoomGesturesEnabled: true,
+                                scrollGesturesEnabled: true,
+                                myLocationButtonEnabled: false,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // --- YENİ: TAKİP ET BUTONU (Buraya entegre ettik) ---
+                          if (user != null)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    () => _toggleFollowNotification(
+                                      ref,
+                                      notification,
+                                      user.uid,
+                                    ),
+                                icon: Icon(
+                                  _isFollowing
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                ),
+                                label: Text(
+                                  _isFollowing ? 'Takipten Çık' : 'Takip Et',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      _isFollowing
+                                          ? Colors.red.shade100
+                                          : Colors.blue.shade50,
+                                  foregroundColor:
+                                      _isFollowing ? Colors.red : Colors.blue,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                          const SizedBox(height: 24),
+
+                          // --- ADMIN PANELİ ---
+                          if (isAdmin) ...[
+                            const Divider(thickness: 1.5),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Yönetici Paneli',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Durum Butonları
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatusButton(
+                                    ref,
+                                    notification,
+                                    NotificationStatus.open,
+                                    'Açık',
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: _buildStatusButton(
+                                    ref,
+                                    notification,
+                                    NotificationStatus.reviewing,
+                                    'İnceleniyor',
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: _buildStatusButton(
+                                    ref,
+                                    notification,
+                                    NotificationStatus.resolved,
+                                    'Çözüldü',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Düzenle ve Sil
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed:
+                                        () => _showEditContentDialog(
+                                          ref,
+                                          notification,
+                                        ),
+                                    icon: const Icon(Icons.edit, size: 16),
+                                    label: const Text('Düzenle'),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    onPressed:
+                                        () => _confirmAndDeleteNotification(
+                                          ref,
+                                          notification,
+                                        ),
+                                    icon: const Icon(
+                                      Icons.delete_forever,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Sonlandır',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          const Spacer(),
+                          const SizedBox(height: 20),
+
+                          // --- SENİN SENDER CARD TASARIMIN ---
+                          SenderInfoCard(senderId: notification.senderId),
+                          const SizedBox(height: 120),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+
+      // --- SENİN FAB BUTONUN ---
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Burada notification verisine erişmek için veriyi tekrar okuyabiliriz
+          // veya notificationAsync.value üzerinden alabiliriz ama null check lazım.
+          final notification = notificationAsync.value;
+          if (notification != null) {
+            context.push('/map', extra: notification);
+          }
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        icon: const Icon(Icons.location_on, color: Colors.white),
+        label: const Text(
+          "Konumda Gör",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
   }
 }
