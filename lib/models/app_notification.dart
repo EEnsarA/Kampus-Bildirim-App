@@ -29,6 +29,7 @@ class AppNotification {
   final String department;
 
   final DateTime createdAt;
+  final bool isDeleted;
 
   //ctor
   AppNotification({
@@ -44,6 +45,7 @@ class AppNotification {
     required this.senderName,
     required this.department,
     required this.createdAt,
+    this.isDeleted = false,
   });
 
   Color get typeColor {
@@ -165,6 +167,7 @@ class AppNotification {
       senderName: map['senderName'] ?? 'Bilinmeyen',
       department: map['department'] ?? 'Genel',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isDeleted: map['isDeleted'] == true,
     );
   }
 
@@ -181,6 +184,7 @@ class AppNotification {
       'senderId': senderId,
       'senderName': senderName,
       'department': department,
+      'isDeleted': isDeleted,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }

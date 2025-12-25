@@ -15,7 +15,9 @@ final authStateProvider = StreamProvider<User?>((ref) {
 // yield* : pointer gibi düşünülebilir nesneyi değil referansı verilir .
 
 // o auth bilgisine göre dönen uid ile eşleşen users collectiondaki user'ı döner .
-final userProfileProvider = StreamProvider.autoDispose<AppUser?>((ref) {
+// NOT: autoDispose kaldırıldı çünkü sayfa değişikliklerinde provider'ın yeniden oluşturulması
+// loading döngüsüne neden oluyordu. Kullanıcı oturumu boyunca state korunmalı.
+final userProfileProvider = StreamProvider<AppUser?>((ref) {
   final authState = ref.watch(authStateProvider);
 
   if (authState.isLoading || authState.hasError) {

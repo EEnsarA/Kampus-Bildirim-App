@@ -166,8 +166,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 notification: _selectedNotification!,
                 onDetailPressed: () {
                   context.push(
-                    "/notification_detail",
-                    extra: _selectedNotification,
+                    '/notification-detail/${_selectedNotification!.id}',
                   );
                 },
               ),

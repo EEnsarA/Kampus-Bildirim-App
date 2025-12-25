@@ -166,15 +166,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     subtitle: const Text("İlgilendiğin gönderileri gör"),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Henüz takip edilen bildirim yok."),
-                        ),
-                      );
+                      context.push('/followed');
                     },
                   ),
                 ),
                 const SizedBox(height: 30),
+
+                // Admin paneline erişim (sadece admin'ler görsün)
+                if (user.role == 'admin')
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.shade50,
+                        foregroundColor: Colors.orange.shade800,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        context.push('/admin');
+                      },
+                      icon: const Icon(Icons.admin_panel_settings),
+                      label: const Text(
+                        "Admin Paneline Git",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
 
                 SizedBox(
                   width: double.infinity,

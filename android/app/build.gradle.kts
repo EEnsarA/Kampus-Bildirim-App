@@ -42,6 +42,7 @@ android {
         applicationId = "com.rasne.kampus_bildirim"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Firebase, Google Maps ve diğer modern SDK'lar için minSdk 23 gerekli
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
