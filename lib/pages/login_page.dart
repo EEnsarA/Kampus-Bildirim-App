@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -198,6 +201,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
         }
         if (mounted) {
+          // Giriş başarılı, FCM token'ı kaydet
+          await _saveFcmToken();
           context.go("/home");
         }
       } catch (e) {
@@ -226,6 +231,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         // Her durumda yükleniyor'u durdur
         if (mounted) setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// FCM token'ı Firestore'a kaydet (takip edilen bildirimlerin durumu değişince bildirim almak için)
+  Future<void> _saveFcmToken() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+              'fcmToken': token,
+              'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+            });
+        debugPrint('FCM Token kaydedildi');
+      }
+    } catch (e) {
+      debugPrint('FCM Token kaydetme hatası: $e');
     }
   }
 

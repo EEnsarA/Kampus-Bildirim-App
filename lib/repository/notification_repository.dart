@@ -130,6 +130,7 @@ class NotificationRepository {
   }
 
   /// Bildirimin durumunu güncelle (Admin için)
+  /// Takipçilere FCM bildirimi gönderilmesi için status_updates collection'ına yazar
   Future<void> updateNotificationStatus({
     required String notificationId,
     required NotificationStatus newStatus,
@@ -137,10 +138,23 @@ class NotificationRepository {
     String? adminName,
   }) async {
     try {
+      // Önce mevcut bildirimi al (eski durumu ve takipçileri almak için)
+      final doc = await _notificationsCollection.doc(notificationId).get();
+      if (!doc.exists) {
+        throw Exception('Bildirim bulunamadı');
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final oldStatus = data['status'] ?? 'open';
+      final followers = List<String>.from(data['followedBy'] ?? []);
+      final notificationTitle = data['title'] ?? 'Bildirim';
+
+      // Durumu güncelle
       await _notificationsCollection.doc(notificationId).update({
         'status': newStatus.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
       // Log admin action
       if (adminId != null || adminName != null) {
         await _logAdminAction(
@@ -148,8 +162,23 @@ class NotificationRepository {
           adminName: adminName,
           action: 'update_status',
           notificationId: notificationId,
-          details: {'newStatus': newStatus.name},
+          details: {'oldStatus': oldStatus, 'newStatus': newStatus.name},
         );
+      }
+
+      // Takipçilere bildirim göndermek için status_updates collection'ına yaz
+      // Cloud Function bu collection'ı dinleyerek FCM gönderecek
+      if (followers.isNotEmpty && oldStatus != newStatus.name) {
+        await firestore.collection('status_updates').add({
+          'notificationId': notificationId,
+          'notificationTitle': notificationTitle,
+          'oldStatus': oldStatus,
+          'newStatus': newStatus.name,
+          'followers': followers,
+          'updatedBy': adminId,
+          'updatedByName': adminName,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       }
     } catch (e) {
       throw Exception('Bildirim durumu güncellenemedi: $e');

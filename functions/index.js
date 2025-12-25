@@ -1,14 +1,17 @@
 /**
- * Cloud Function: Acil Durum Bildirimlerini FCM ile Gönder
+ * Cloud Functions: Kampüs Bildirim FCM Servisleri
  * 
- * Firestore'da `fcm_messages` collection'ına yeni doküman eklendiğinde
- * tetiklenir ve 'all' topic'ine abone tüm cihazlara push notification gönderir.
+ * 1. sendEmergencyNotification: Acil duyuruları tüm kullanıcılara gönderir
+ * 2. sendStatusUpdateNotification: Takip edilen bildirimlerin durum değişikliklerini takipçilere gönderir
  */
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
+
+// Firestore referansı
+const db = admin.firestore();
 
 /**
  * fcm_messages collection'a yeni doküman eklendiğinde tetiklenir
@@ -87,6 +90,120 @@ exports.sendEmergencyNotification = functions.firestore
         error: error.message,
       });
       
+      return { success: false, error: error.message };
+    }
+  });
+
+/**
+ * status_updates collection'a yeni doküman eklendiğinde tetiklenir
+ * Bildirim durumu değiştiğinde takipçilere push notification gönderir
+ */
+exports.sendStatusUpdateNotification = functions.firestore
+  .document('status_updates/{docId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    
+    const notificationId = data.notificationId;
+    const notificationTitle = data.notificationTitle || 'Bildirim';
+    const oldStatus = data.oldStatus || 'open';
+    const newStatus = data.newStatus || 'open';
+    const followers = data.followers || [];
+
+    // Takipçi yoksa işlem yapma
+    if (followers.length === 0) {
+      console.log('⚠️ Takipçi yok, FCM gönderilmedi');
+      await snap.ref.update({ sent: false, reason: 'no_followers' });
+      return { success: false, reason: 'no_followers' };
+    }
+
+    // Durum etiketlerini Türkçeleştir
+    const statusLabels = {
+      'open': 'Açık',
+      'reviewing': 'İnceleniyor',
+      'resolved': 'Çözüldü'
+    };
+
+    const newStatusLabel = statusLabels[newStatus] || newStatus;
+
+    // Her takipçi için FCM token'ını al ve bildirim gönder
+    const sendPromises = followers.map(async (userId) => {
+      try {
+        // Kullanıcının FCM token'ını al
+        const userDoc = await db.collection('users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+          console.log(`⚠️ Kullanıcı bulunamadı: ${userId}`);
+          return { userId, success: false, reason: 'user_not_found' };
+        }
+
+        const userData = userDoc.data();
+        const fcmToken = userData.fcmToken;
+
+        // Token yoksa topic bazlı gönder (kullanıcı 'all' topic'ine kayıtlı)
+        // Bu durumda bireysel bildirim gönderemeyiz, sadece log tutalım
+        if (!fcmToken) {
+          console.log(`⚠️ FCM token yok: ${userId}`);
+          return { userId, success: false, reason: 'no_fcm_token' };
+        }
+
+        // FCM mesajı oluştur
+        const message = {
+          notification: {
+            title: '📢 Durum Güncellendi',
+            body: `"${notificationTitle}" bildirimi artık "${newStatusLabel}" durumunda.`,
+          },
+          data: {
+            type: 'status_update',
+            notificationId: notificationId,
+            oldStatus: oldStatus,
+            newStatus: newStatus,
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          },
+          android: {
+            notification: {
+              icon: 'ic_notification',
+              color: '#2196F3',
+              channelId: 'status_channel',
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+              },
+            },
+          },
+          token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(message);
+        console.log(`✅ FCM gönderildi: ${userId}`, response);
+        return { userId, success: true, messageId: response };
+
+      } catch (error) {
+        console.error(`❌ FCM hatası (${userId}):`, error.message);
+        return { userId, success: false, error: error.message };
+      }
+    });
+
+    try {
+      const results = await Promise.all(sendPromises);
+      const successCount = results.filter(r => r.success).length;
+      
+      console.log(`📊 Durum bildirimi sonucu: ${successCount}/${followers.length} başarılı`);
+      
+      await snap.ref.update({
+        sent: true,
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        results: results,
+        successCount: successCount,
+        totalFollowers: followers.length,
+      });
+
+      return { success: true, successCount, totalFollowers: followers.length };
+    } catch (error) {
+      console.error('❌ Toplu gönderim hatası:', error);
+      await snap.ref.update({ sent: false, error: error.message });
       return { success: false, error: error.message };
     }
   });
