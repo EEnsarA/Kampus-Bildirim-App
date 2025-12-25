@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kampus_bildirim/components/notification_filter_drawer.dart';
 import 'package:kampus_bildirim/components/notification_status_badge.dart';
+import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/models/app_user.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
@@ -16,6 +18,10 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   String _searchQuery = '';
+  List<NotificationType> _selectedTypes = [];
+  bool _onlyOpen = false;
+  bool _onlyFollowed = false;
+  bool _onlyMyDepartment = false;
 
   @override
   Widget build(BuildContext context) {
@@ -38,35 +44,28 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         }
 
+        final followedNotificationsAsync = ref.watch(
+          followedNotificationsProvider(user.uid),
+        );
+
+        final Set<String> followedIds =
+            followedNotificationsAsync.value?.map((e) => e.id).toSet() ?? {};
+
         return Scaffold(
-          endDrawer: Drawer(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      "Filtrele",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const Divider(),
-                  CheckboxListTile(
-                    value: false, // Burayı state ile yönetmelisin
-                    title: const Text("Sadece Okunmamışlar"),
-                    onChanged: (val) {},
-                  ),
-                  CheckboxListTile(
-                    value: false,
-                    title: const Text("Yüksek Öncelik"),
-                    onChanged: (val) {},
-                  ),
-                ],
-              ),
-            ),
+          endDrawer: NotificationFilterDrawer(
+            user: user,
+            initialSelectedTypes: _selectedTypes,
+            initialOnlyOpen: _onlyOpen,
+            initialOnlyFollowed: _onlyFollowed,
+            initialOnlyMyDepartment: _onlyMyDepartment,
+            onApply: (types, open, followed, department) {
+              setState(() {
+                _selectedTypes = types;
+                _onlyOpen = open;
+                _onlyFollowed = followed;
+                _onlyMyDepartment = department;
+              });
+            },
           ),
 
           floatingActionButton: FloatingActionButton(
@@ -209,16 +208,63 @@ class _HomePageState extends ConsumerState<HomePage> {
             data: (allNotifications) {
               final filteredList =
                   allNotifications.where((notification) {
-                    // Hem search bar inputu hem notificationdan gelen title ve content küçük harf yapılır ve bu şekilde filtrelenir
+                    // filtreler
                     final searchLower = _searchQuery.toLowerCase();
                     final titleLower = notification.title.toLowerCase();
                     final contentLower = notification.content.toLowerCase();
-                    return titleLower.contains(searchLower) ||
+                    final matchesSearch =
+                        titleLower.contains(searchLower) ||
                         contentLower.contains(searchLower);
+                    if (!matchesSearch) return false;
+
+                    // Tür Filtresi
+                    if (_selectedTypes.isNotEmpty) {
+                      if (!_selectedTypes.contains(notification.type)) {
+                        return false;
+                      }
+                    }
+
+                    // Durum Filtresi (Sadece Açık Olanlar)
+                    if (_onlyOpen) {
+                      if (notification.status == NotificationStatus.resolved) {
+                        return false;
+                      }
+                    }
+
+                    if (_onlyFollowed) {
+                      if (!followedIds.contains(notification.id)) {
+                        return false;
+                      }
+                    }
+
+                    // Departman Filtresi (Admin için)
+                    if (_onlyMyDepartment) {
+                      if (notification.department != user.department) {
+                        return false;
+                      }
+                    }
+
+                    return true;
                   }).toList();
 
               if (filteredList.isEmpty) {
-                return const Center(child: Text("Bildirim bulunamadı."));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.filter_list_off,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Kriterlere uygun bildirim yok.",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
               }
 
               return ListView.builder(

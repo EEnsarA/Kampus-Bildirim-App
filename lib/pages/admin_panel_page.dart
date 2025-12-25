@@ -145,10 +145,10 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
         'role': newRole,
       });
       if (!mounted) return;
-      showCustomToast(this.context, 'Kullanıcı rolü güncellendi');
+      showCustomToast(context, 'Kullanıcı rolü güncellendi');
     } catch (e) {
       if (!mounted) return;
-      showCustomToast(this.context, 'Hata: $e', isError: true);
+      showCustomToast(context, 'Hata: $e', isError: true);
     }
   }
 
@@ -629,12 +629,12 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
       );
       if (!mounted) return;
       showCustomToast(
-        this.context,
+        context,
         '${notification.title} bildirimi "${newStatus.name}" durumuna güncellendi.',
       );
     } catch (e) {
       if (!mounted) return;
-      showCustomToast(this.context, 'Hata: $e', isError: true);
+      showCustomToast(context, 'Hata: $e', isError: true);
     }
   }
 
@@ -705,11 +705,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     // Form doğrulaması
     if (_emergencyTitleController.text.isEmpty ||
         _emergencyContentController.text.isEmpty) {
-      showCustomToast(
-        this.context,
-        'Başlık ve içeriği doldurunuz.',
-        isError: true,
-      );
+      showCustomToast(context, 'Başlık ve içeriği doldurunuz.', isError: true);
       return;
     }
 
@@ -734,10 +730,7 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
       });
 
       // Başarı mesajı göster
-      showCustomToast(
-        this.context,
-        'Acil duyuru tüm kullanıcılara yayınlandı!',
-      );
+      showCustomToast(context, 'Acil duyuru tüm kullanıcılara yayınlandı!');
 
       // Listeyi yenile
       ref.watch(notificationsProvider);

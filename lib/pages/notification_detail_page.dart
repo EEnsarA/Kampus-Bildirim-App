@@ -2,20 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-// Senin bileşenlerin
 import 'package:kampus_bildirim/components/notification_status_badge.dart';
 import 'package:kampus_bildirim/components/sender_info_card.dart';
-import 'package:kampus_bildirim/components/custom_toast.dart'; // Toast mesajı
-
-// Modeller ve Providerlar
+import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 
 class NotificationDetailPage extends ConsumerStatefulWidget {
-  // Arkadaşının mantığı daha doğru: ID ile alıp taze veri çekeceğiz
   final String notificationId;
 
   const NotificationDetailPage({super.key, required this.notificationId});
@@ -27,9 +22,7 @@ class NotificationDetailPage extends ConsumerStatefulWidget {
 
 class _NotificationDetailPageState
     extends ConsumerState<NotificationDetailPage> {
-  bool _isFollowing = false; // Takip durumu için
-
-  /// --- YENİ EKLENEN TAKİP FONKSİYONU (Arkadaşından aldık) ---
+  bool _isFollowing = false;
   Future<void> _toggleFollowNotification(
     WidgetRef ref,
     AppNotification notification,
@@ -53,7 +46,7 @@ class _NotificationDetailPageState
         );
         setState(() => _isFollowing = true);
         if (!mounted) return;
-        showCustomToast(context, 'Bildirim takibe alındı ❤️');
+        showCustomToast(context, 'Bildirim takibe alındı  🚀');
       }
 
       // Listeyi yenile
@@ -237,7 +230,6 @@ class _NotificationDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    // ID ile veriyi çekiyoruz (Arkadaşının yöntemi)
     final notificationAsync = ref.watch(
       notificationDetailProvider(widget.notificationId),
     );
@@ -256,7 +248,6 @@ class _NotificationDetailPageState
         foregroundColor: Colors.black,
       ),
 
-      // Veri yüklenirken veya hata varsa gösterilecekler
       body: notificationAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Hata: $err')),
@@ -265,16 +256,11 @@ class _NotificationDetailPageState
             return const Center(child: Text("Bildirim bulunamadı."));
           }
 
-          // Admin kontrolü
           bool isAdmin = false;
           final user = userAsync.value;
           if (user != null && user.role == "admin") {
             isAdmin = true;
           }
-
-          // Takip durumunu başlat (Sayfa ilk açıldığında kontrol edilebilir, şimdilik false başlıyor butona basınca değişiyor)
-          // Eğer backend'de "followers" listesi varsa burada _isFollowing = notification.followers.contains(user.uid) gibi bir set işlemi yapılabilir.
-          // Basitlik adına şimdilik manuel bırakıyorum.
 
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -287,7 +273,6 @@ class _NotificationDetailPageState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // --- GÖRSEL ALANI (Senin tasarımın) ---
                           if (notification.imageUrl != null)
                             Container(
                               width: double.infinity,
@@ -313,7 +298,9 @@ class _NotificationDetailPageState
                               height: 120,
                               margin: const EdgeInsets.only(bottom: 20),
                               decoration: BoxDecoration(
-                                color: notification.typeColor.withOpacity(0.1),
+                                color: notification.typeColor.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Center(
@@ -324,8 +311,6 @@ class _NotificationDetailPageState
                                 ),
                               ),
                             ),
-
-                          // --- BAŞLIK ve TARİH (Senin tasarımın) ---
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -379,16 +364,12 @@ class _NotificationDetailPageState
                           const SizedBox(height: 5),
                           const Divider(),
                           const SizedBox(height: 5),
-
-                          // --- İÇERİK ---
                           Text(
                             notification.content,
                             style: const TextStyle(fontSize: 16, height: 1.6),
                           ),
 
                           const SizedBox(height: 20),
-
-                          // --- HARİTA (Arkadaşının kodu ama senin tasarımın içinde) ---
                           const Text(
                             'Konum',
                             style: TextStyle(
@@ -429,8 +410,6 @@ class _NotificationDetailPageState
                           ),
 
                           const SizedBox(height: 24),
-
-                          // --- YENİ: TAKİP ET BUTONU (Buraya entegre ettik) ---
                           if (user != null)
                             SizedBox(
                               width: double.infinity,
@@ -465,8 +444,6 @@ class _NotificationDetailPageState
                             ),
 
                           const SizedBox(height: 24),
-
-                          // --- ADMIN PANELİ ---
                           if (isAdmin) ...[
                             const Divider(thickness: 1.5),
                             const SizedBox(height: 10),
@@ -479,7 +456,6 @@ class _NotificationDetailPageState
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // Durum Butonları
                             Row(
                               children: [
                                 Expanded(
@@ -511,7 +487,6 @@ class _NotificationDetailPageState
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Düzenle ve Sil
                             Row(
                               children: [
                                 Expanded(
@@ -555,7 +530,6 @@ class _NotificationDetailPageState
                           const Spacer(),
                           const SizedBox(height: 20),
 
-                          // --- SENİN SENDER CARD TASARIMIN ---
                           SenderInfoCard(senderId: notification.senderId),
                           const SizedBox(height: 120),
                         ],
@@ -569,11 +543,8 @@ class _NotificationDetailPageState
         },
       ),
 
-      // --- SENİN FAB BUTONUN ---
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Burada notification verisine erişmek için veriyi tekrar okuyabiliriz
-          // veya notificationAsync.value üzerinden alabiliriz ama null check lazım.
           final notification = notificationAsync.value;
           if (notification != null) {
             context.push('/map', extra: notification);
