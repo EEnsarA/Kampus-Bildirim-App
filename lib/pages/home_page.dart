@@ -1,8 +1,25 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Ana Sayfa (home_page.dart)
+/// =============================================================================
+/// Bu dosya uygulamamın ana ekranını içerir.
+/// Tüm bildirimleri listeler ve filtreleme/arama özelliği sunar.
+///
+/// İçerdiği Özellikler:
+/// - Bildirim listesi (gerçek zamanlı Firestore stream)
+/// - Arama çubuğu ile filtreleme
+/// - Bildirim tipi ve durumuna göre renklendirme
+/// - FCM token kaydetme
+/// - Takip edilen bildirimlerin durum değişikliği bildirimi
+/// - Harita ve profil sayfalarına navigasyon
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // FCM token
+import 'package:cloud_firestore/cloud_firestore.dart'; // Token kaydetme
 import 'package:kampus_bildirim/components/notification_status_badge.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/models/app_user.dart';
@@ -10,6 +27,11 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
+// =============================================================================
+// HomePage Widget'ı
+// =============================================================================
+/// Uygulamanın ana ekranı.
+/// Tüm bildirimleri listeler, arama ve filtreleme sunar.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -18,11 +40,19 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  // -------------------------------------------------------------------------
+  // State Değişkenleri
+  // -------------------------------------------------------------------------
+  /// Arama çubuğu metni
   String _searchQuery = '';
+
+  /// FCM token kaydedildi mi? (tekrar kaydetmeyi önler)
   bool _fcmTokenSaved = false;
 
-  // Takip edilen bildirimlerin durumlarını cache'le (değişiklik tespiti için)
+  /// Takip edilen bildirimlerin durum cache'i (değişiklik tespiti için)
   Map<String, String> _followedStatusCache = {};
+
+  /// İlk yükleme mi? (İlk yüklemede bildirim gösterme)
   bool _isFirstLoad = true;
 
   @override
@@ -30,9 +60,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
   }
 
-  /// FCM token'ı Firestore'a kaydet (takip edilen bildirimlerin durumu değişince bildirim almak için)
+  // -------------------------------------------------------------------------
+  // FCM Token Kaydetme
+  // -------------------------------------------------------------------------
+  /// Push notification almak için FCM token'ı Firestore'a kaydeder.
+  /// Token zaten kaydedildiyse tekrar kaydetmez.
   Future<void> _ensureFcmTokenSaved(String userId) async {
-    if (_fcmTokenSaved) return; // Zaten kaydedildiyse tekrar kaydetme
+    if (_fcmTokenSaved) return; // Zaten kaydedildiyse çık
 
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -51,7 +85,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  /// Takip edilen bildirimlerin durum değişikliklerini kontrol et
+  // -------------------------------------------------------------------------
+  // Durum Değişikliği Kontrolü
+  // -------------------------------------------------------------------------
+  /// Takip edilen bildirimlerin durum değişikliklerini kontrol eder.
+  /// Durum değiştiyse kullanıcıya in-app bildirim gösterir.
   void _checkForStatusChanges(List<AppNotification> followedNotifications) {
     // İlk yüklemede sadece cache'i doldur, bildirim gösterme
     if (_isFirstLoad) {
@@ -82,7 +120,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  /// Durum değişikliği bildirimi göster
+  // -------------------------------------------------------------------------
+  // Durum Değişikliği Bildirimi
+  // -------------------------------------------------------------------------
+  /// Takip edilen bir bildirimin durumu değiştiğinde SnackBar gösterir.
   void _showStatusChangeNotification(
     AppNotification notification,
     String oldStatus,

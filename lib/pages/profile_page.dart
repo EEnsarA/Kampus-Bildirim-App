@@ -1,10 +1,25 @@
-import 'dart:io';
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Profil Sayfası (profile_page.dart)
+/// =============================================================================
+/// Bu dosya kullanıcı profil bilgilerini ve ayarlarını gösterir.
+///
+/// İçerdiği Özellikler:
+/// - Profil fotoğrafı değiştirme (galeri seçimi + Firebase Storage yükleme)
+/// - Bildirim tercihleri (switch'ler ile)
+/// - Takip edilen bildirimler sayfasına yönlendirme
+/// - Admin paneli erişimi (sadece admin'ler için)
+/// - Çıkış yapma
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
+import 'dart:io'; // File sınıfı için
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart'; // Resim seçme
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/components/profile_info_card.dart';
 import 'package:kampus_bildirim/components/section_title.dart';
@@ -13,6 +28,10 @@ import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 import 'package:kampus_bildirim/services/store_img_service.dart';
 
+// =============================================================================
+// ProfilePage Widget'ı
+// =============================================================================
+/// Kullanıcı profili ve ayarlar sayfası.
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
@@ -21,32 +40,47 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  bool _notifyEvents = true;
-  bool _notifyUrgent = true;
-  bool _notifyLostFound = false;
+  // -------------------------------------------------------------------------
+  // Bildirim Tercihi State Değişkenleri
+  // -------------------------------------------------------------------------
+  /// NOT: Bu değerler şimdilik lokal state'te tutulmaktadır.
+  /// Gerçek uygulamada Firestore'a kaydedilmelidir.
+  bool _notifyEvents = true; // Etkinlik bildirimleri
+  bool _notifyUrgent = true; // Acil durum bildirimleri
+  bool _notifyLostFound = false; // Kayıp/buluntu bildirimleri
 
+  // -------------------------------------------------------------------------
+  // Profil Resmi Seçme ve Yükleme
+  // -------------------------------------------------------------------------
+  /// Galeriden resim seçer ve Firebase Storage'a yükler.
+  /// Ardından Firestore'daki avatarUrl alanını günceller.
   Future<void> _pickAndUploadImage(String userId) async {
     final picker = ImagePicker();
-    // 1. Resim Seç
+
+    // 1. Galeriden resim seç
     final XFile? pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 50,
-      maxWidth: 500,
+      imageQuality: 50, // Sıkıştırma (dosya boyutu için)
+      maxWidth: 500, // Max genişlik
     );
 
-    if (pickedFile == null) return;
+    if (pickedFile == null) return; // Seçim iptal edildiyse
 
     try {
       if (mounted) {
         showCustomToast(context, "Profil resmi yükleniyor...", isError: false);
       }
+
       File file = File(pickedFile.path);
+
+      // 2. Storage'a yükle
       String? downloadUrl = await StoreImgService.uploadProfileImage(
         file,
         userId,
       );
 
       if (downloadUrl != null) {
+        // 3. Firestore'daki avatarUrl alanını güncelle
         await FirebaseFirestore.instance.collection("users").doc(userId).update(
           {"avatarUrl": downloadUrl},
         );

@@ -1,7 +1,26 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bölüm Başlığı (section_title.dart)
+/// =============================================================================
+/// Bu dosya sayfalarda bölüm ayıracı olarak kullanılan
+/// başlık bileşenini içerir.
+///
+/// Kullanım: SectionTitle(title: "Bölüm Adı")
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 
+// =============================================================================
+// SectionTitle Widget'ı
+// =============================================================================
+/// Sayfaları bölümlere ayırmak için kullanılan başlık.
+/// Soldan hizalı, kalın yazı tipli.
 class SectionTitle extends StatelessWidget {
+  /// Başlık metni
   final String title;
+
+  /// Constructor
   const SectionTitle({super.key, required this.title});
 
   @override

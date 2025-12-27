@@ -1,21 +1,41 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bildirim Detay Sayfası (notification_detail_page.dart)
+/// =============================================================================
+/// Bu dosya seçilen bildirimin detaylarını gösterir.
+///
+/// İçerdiği Özellikler:
+/// - Bildirim başlık, içerik, resim, konum gösterimi
+/// - Gönderici bilgisi kartı
+/// - Takip etme/bırakma işlevi
+/// - Admin: Durum güncelleme, içerik düzenleme, silme
+/// - Harita önizlemesi (mini map)
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Mini harita
 
-// Senin bileşenlerin
+// Bileşenler
 import 'package:kampus_bildirim/components/notification_status_badge.dart';
 import 'package:kampus_bildirim/components/sender_info_card.dart';
-import 'package:kampus_bildirim/components/custom_toast.dart'; // Toast mesajı
+import 'package:kampus_bildirim/components/custom_toast.dart';
 
-// Modeller ve Providerlar
+// Modeller ve Provider'lar
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 
+// =============================================================================
+// NotificationDetailPage Widget'ı
+// =============================================================================
+/// Bildirim detaylarını gösteren sayfa.
+/// ID ile Firestore'dan taze veri çeker.
 class NotificationDetailPage extends ConsumerStatefulWidget {
-  // Arkadaşının mantığı daha doğru: ID ile alıp taze veri çekeceğiz
+  /// Gösterilecek bildirimin ID'si
   final String notificationId;
 
   const NotificationDetailPage({super.key, required this.notificationId});
@@ -27,9 +47,13 @@ class NotificationDetailPage extends ConsumerStatefulWidget {
 
 class _NotificationDetailPageState
     extends ConsumerState<NotificationDetailPage> {
-  bool _isFollowing = false; // Takip durumu için
+  /// Kullanıcı bu bildirimi takip ediyor mu?
+  bool _isFollowing = false;
 
-  /// --- YENİ EKLENEN TAKİP FONKSİYONU (Arkadaşından aldık) ---
+  // -------------------------------------------------------------------------
+  // Takip Etme/Bırakma
+  // -------------------------------------------------------------------------
+  /// Bildirimi takibe alır veya takipten çıkarır.
   Future<void> _toggleFollowNotification(
     WidgetRef ref,
     AppNotification notification,

@@ -1,23 +1,63 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bildirim Repository (notification_repository.dart)
+/// =============================================================================
+/// Bu dosya Firestore veritabanı ile bildirim CRUD işlemlerini yönetir.
+/// Repository pattern: Veri erişim katmanını UI'dan soyutlar.
+///
+/// İçerdiği İşlemler:
+/// - Bildirim listeleme (Stream)
+/// - Bildirim oluşturma
+/// - Durum güncelleme
+/// - Takip etme/bırakma
+/// - Arama ve filtreleme
+/// - Admin işlemleri (silme, acil duyuru)
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 
-// Provider'ı bir kez oluştur ve merkezi olarak kullan
+// =============================================================================
+// NOTIFICATION REPOSITORY PROVIDER
+// =============================================================================
+/// Riverpod provider - dependency injection için
+/// Uygulama genelinde tek instance kullanılır (Singleton pattern)
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(firestore: FirebaseFirestore.instance);
 });
 
+// =============================================================================
+// NotificationRepository Sınıfı
+// =============================================================================
+/// Bildirimlerle ilgili tüm veritabanı işlemlerini yönetir.
 class NotificationRepository {
+  /// Firestore instance (Dependency Injection ile alınır)
   final FirebaseFirestore firestore;
 
+  /// Constructor
   NotificationRepository({required this.firestore});
 
-  // Collection reference
+  // -------------------------------------------------------------------------
+  // Collection Referansı
+  // -------------------------------------------------------------------------
+  /// 'notifications' collection'una referans döndürür.
   CollectionReference get _notificationsCollection =>
       firestore.collection('notifications');
 
-  /// Tüm bildirimleri güncellemeden eski'ye doğru sıralanmış şekilde stream olarak getir
+  // =========================================================================
+  // LİSTELEME İŞLEMLERİ
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Tüm Bildirimleri Getir (Stream)
+  /// ---------------------------------------------------------------------------
+  /// Tüm bildirimleri gerçek zamanlı olarak dinler.
+  /// - Tarihe göre azalan sıralama (en yeni önce)
+  /// - Silinmiş (soft-delete) bildirimler filtrelenir
+  /// ---------------------------------------------------------------------------
   Stream<List<AppNotification>> getAllNotificationsStream() {
     return _notificationsCollection
         .orderBy('createdAt', descending: true)
@@ -30,12 +70,21 @@ class NotificationRepository {
                   doc.id,
                 ),
               )
-              .where((n) => n.isDeleted == false)
+              .where((n) => n.isDeleted == false) // Silinmişleri filtrele
               .toList();
         });
   }
 
-  /// Soft-delete a notification (mark as deleted)
+  // =========================================================================
+  // ADMİN SİLME İŞLEMLERİ
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Soft-Delete (Geçici Silme)
+  /// ---------------------------------------------------------------------------
+  /// Bildirimi kalıcı olarak silmez, sadece 'isDeleted' flag'ini true yapar.
+  /// Bu sayede gerektiğinde geri getirilebilir.
+  /// ---------------------------------------------------------------------------
   Future<void> softDeleteNotification(
     String notificationId, {
     String? adminId,
@@ -46,6 +95,8 @@ class NotificationRepository {
         'isDeleted': true,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      // Admin işlemi logla (denetim için)
       await _logAdminAction(
         adminId: adminId,
         adminName: adminName,
@@ -58,7 +109,11 @@ class NotificationRepository {
     }
   }
 
-  /// Restore a soft-deleted notification
+  /// ---------------------------------------------------------------------------
+  /// Silinen Bildirimi Geri Getir
+  /// ---------------------------------------------------------------------------
+  /// Soft-delete ile silinen bildirimi tekrar aktif hale getirir.
+  /// ---------------------------------------------------------------------------
   Future<void> restoreNotification(
     String notificationId, {
     String? adminId,
@@ -69,6 +124,8 @@ class NotificationRepository {
         'isDeleted': false,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      // Admin işlemi logla
       await _logAdminAction(
         adminId: adminId,
         adminName: adminName,
@@ -81,7 +138,16 @@ class NotificationRepository {
     }
   }
 
-  /// Belirli bir bildirimi ID ile getir
+  // =========================================================================
+  // TEKLİ BİLDİRİM GETİRME
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// ID ile Bildirim Getir
+  /// ---------------------------------------------------------------------------
+  /// Verilen ID'ye sahip bildirimi Firestore'dan çeker.
+  /// Bulunamazsa null döndürür.
+  /// ---------------------------------------------------------------------------
   Future<AppNotification?> getNotificationById(String notificationId) async {
     try {
       final doc = await _notificationsCollection.doc(notificationId).get();
@@ -97,7 +163,16 @@ class NotificationRepository {
     }
   }
 
-  /// Yeni bildirim oluştur
+  // =========================================================================
+  // BİLDİRİM OLUŞTURMA
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Yeni Bildirim Oluştur
+  /// ---------------------------------------------------------------------------
+  /// Kullanıcıların yeni bildirim göndermesi için kullanılır.
+  /// Oluşturulan dokümanın ID'sini döndürür.
+  /// ---------------------------------------------------------------------------
   Future<String> createNotification({
     required String title,
     required String content,
@@ -114,7 +189,7 @@ class NotificationRepository {
         'title': title,
         'content': content,
         'type': type.name,
-        'status': NotificationStatus.open.name,
+        'status': NotificationStatus.open.name, // Varsayılan durum: Açık
         'latitude': latitude,
         'longitude': longitude,
         'senderId': senderId,
@@ -122,7 +197,7 @@ class NotificationRepository {
         'department': department,
         'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
-        'followedBy': [], // Takip edenler listesi
+        'followedBy': [], // Takipçi listesi (başlangıçta boş)
       });
       return docRef.id;
     } catch (e) {
@@ -130,8 +205,22 @@ class NotificationRepository {
     }
   }
 
-  /// Bildirimin durumunu güncelle (Admin için)
-  /// Takipçilere FCM bildirimi gönderilmesi için status_updates collection'ına yazar
+  // =========================================================================
+  // DURUM GÜNCELLEME (ADMİN)
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Bildirim Durumunu Güncelle
+  /// ---------------------------------------------------------------------------
+  /// Admin tarafından bildirim durumunu değiştirir.
+  /// Durum değişikliğinde takipçilere FCM bildirimi gönderilir.
+  ///
+  /// İşlem Adımları:
+  /// 1. Mevcut bildirimi ve takipçileri al
+  /// 2. Durumu güncelle
+  /// 3. Admin işlemini logla
+  /// 4. fcm_messages'a yaz (Cloud Function tetikler)
+  /// ---------------------------------------------------------------------------
   Future<void> updateNotificationStatus({
     required String notificationId,
     required NotificationStatus newStatus,
@@ -139,7 +228,7 @@ class NotificationRepository {
     String? adminName,
   }) async {
     try {
-      // Önce mevcut bildirimi al (eski durumu ve takipçileri almak için)
+      // 1. Mevcut bildirimi al (eski durum ve takipçiler için)
       final doc = await _notificationsCollection.doc(notificationId).get();
       if (!doc.exists) {
         throw Exception('Bildirim bulunamadı');
@@ -150,13 +239,13 @@ class NotificationRepository {
       final followers = List<String>.from(data['followedBy'] ?? []);
       final notificationTitle = data['title'] ?? 'Bildirim';
 
-      // Durumu güncelle
+      // 2. Durumu güncelle
       await _notificationsCollection.doc(notificationId).update({
         'status': newStatus.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Log admin action
+      // 3. Admin işlemini logla
       if (adminId != null || adminName != null) {
         await _logAdminAction(
           adminId: adminId,
@@ -167,8 +256,8 @@ class NotificationRepository {
         );
       }
 
-      // Takipçilere bildirim göndermek için fcm_messages collection'ına yaz
-      // Bu collection zaten çalışan sendEmergencyNotification Cloud Function tarafından dinleniyor
+      // 4. Takipçilere bildirim gönder (FCM)
+      // fcm_messages collection'a yazılarak Cloud Function tetiklenir
       if (followers.isNotEmpty && oldStatus != newStatus.name) {
         final statusLabels = {
           'open': 'Açık',
@@ -198,7 +287,15 @@ class NotificationRepository {
     }
   }
 
-  /// Bildirimin içeriğini güncelle (Admin için)
+  // =========================================================================
+  // İÇERİK GÜNCELLEME (ADMİN)
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Bildirim İçeriğini Güncelle
+  /// ---------------------------------------------------------------------------
+  /// Admin tarafından bildirim açıklamasını düzenler.
+  /// ---------------------------------------------------------------------------
   Future<void> updateNotificationContent({
     required String notificationId,
     required String content,
@@ -210,7 +307,8 @@ class NotificationRepository {
         'content': content,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      // Log admin action
+
+      // Admin işlemini logla
       if (adminId != null || adminName != null) {
         await _logAdminAction(
           adminId: adminId,
@@ -225,16 +323,27 @@ class NotificationRepository {
     }
   }
 
-  /// Bildirimi takip et
+  // =========================================================================
+  // TAKİP İŞLEMLERİ
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Bildirimi Takip Et
+  /// ---------------------------------------------------------------------------
+  /// Kullanıcıyı bildirimin 'followedBy' listesine ekler.
+  /// Durum değişikliklerinde kullanıcı bildirim alır.
+  /// ---------------------------------------------------------------------------
   Future<void> followNotification({
     required String notificationId,
     required String userId,
   }) async {
     try {
+      // Firestore arrayUnion: Diziye eleman ekler (varsa eklemez)
       await _notificationsCollection.doc(notificationId).update({
         'followedBy': FieldValue.arrayUnion([userId]),
       });
-      // Log the user action for audit (follow)
+
+      // Kullanıcı işlemini logla (denetim için)
       await _logAdminAction(
         adminId: userId,
         adminName: null,
@@ -247,16 +356,22 @@ class NotificationRepository {
     }
   }
 
-  /// Bildiriyi takipten çıkar
+  /// ---------------------------------------------------------------------------
+  /// Bildirimi Takipten Çıkar
+  /// ---------------------------------------------------------------------------
+  /// Kullanıcıyı bildirimin 'followedBy' listesinden çıkarır.
+  /// ---------------------------------------------------------------------------
   Future<void> unfollowNotification({
     required String notificationId,
     required String userId,
   }) async {
     try {
+      // Firestore arrayRemove: Diziden eleman çıkarır
       await _notificationsCollection.doc(notificationId).update({
         'followedBy': FieldValue.arrayRemove([userId]),
       });
-      // Log the user action for audit (unfollow)
+
+      // Kullanıcı işlemini logla
       await _logAdminAction(
         adminId: userId,
         adminName: null,
@@ -269,7 +384,12 @@ class NotificationRepository {
     }
   }
 
-  /// Kullanıcının takip ettiği bildirimleri getir
+  /// ---------------------------------------------------------------------------
+  /// Takip Edilen Bildirimleri Getir (Stream)
+  /// ---------------------------------------------------------------------------
+  /// Kullanıcının takip ettiği bildirimleri gerçek zamanlı dinler.
+  /// Firestore 'arrayContains' sorgusu kullanır.
+  /// ---------------------------------------------------------------------------
   Stream<List<AppNotification>> getFollowedNotificationsStream(String userId) {
     return _notificationsCollection
         .where('followedBy', arrayContains: userId)
@@ -287,7 +407,16 @@ class NotificationRepository {
         });
   }
 
-  /// Tür bazlı bildirimleri filtrelemek için
+  // =========================================================================
+  // FİLTRELEME İŞLEMLERİ
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Türe Göre Filtrele
+  /// ---------------------------------------------------------------------------
+  /// Belirli bir türdeki bildirimleri getirir.
+  /// Örn: Sadece acil durumları veya etkinlikleri listele.
+  /// ---------------------------------------------------------------------------
   Stream<List<AppNotification>> getNotificationsByType(NotificationType type) {
     return _notificationsCollection
         .where('type', isEqualTo: type.name)
@@ -305,7 +434,12 @@ class NotificationRepository {
         });
   }
 
-  /// Durum bazlı bildirimleri filtrelemek için (açık bildirimler gibi)
+  /// ---------------------------------------------------------------------------
+  /// Duruma Göre Filtrele
+  /// ---------------------------------------------------------------------------
+  /// Belirli bir durumdaki bildirimleri getirir.
+  /// Örn: Sadece açık veya çözülmüş bildirimleri listele.
+  /// ---------------------------------------------------------------------------
   Stream<List<AppNotification>> getNotificationsByStatus(
     NotificationStatus status,
   ) {
@@ -325,9 +459,22 @@ class NotificationRepository {
         });
   }
 
-  /// Başlık ve içerikle ara
+  // =========================================================================
+  // ARAMA İŞLEMİ
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Başlık ve İçerikle Ara
+  /// ---------------------------------------------------------------------------
+  /// Verilen sorguyu başlık ve içerikte arar.
+  ///
+  /// NOT: Firestore full-text search desteklemediği için
+  /// tüm veriler çekilip client-side filtreleme yapılır.
+  /// Büyük veri setlerinde performans sorunu olabilir.
+  /// ---------------------------------------------------------------------------
   Future<List<AppNotification>> searchNotifications(String query) async {
     try {
+      // Tüm bildirimleri çek
       final snapshot = await _notificationsCollection.get();
       final allNotifications =
           snapshot.docs
@@ -339,7 +486,7 @@ class NotificationRepository {
               )
               .toList();
 
-      // Firestore full-text search desteklemediği için client-side arama yapıyoruz
+      // Client-side filtreleme (küçük harfe çevirerek)
       return allNotifications.where((notification) {
         final queryLower = query.toLowerCase();
         return notification.title.toLowerCase().contains(queryLower) ||
@@ -350,7 +497,16 @@ class NotificationRepository {
     }
   }
 
-  /// Bildirimi sil (Admin için - opsiyonel)
+  // =========================================================================
+  // KALICI SİLME (ADMİN)
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Bildirimi Kalıcı Olarak Sil
+  /// ---------------------------------------------------------------------------
+  /// Bildirimi Firestore'dan tamamen siler.
+  /// DİKKAT: Bu işlem geri alınamaz! Soft-delete tercih edilmeli.
+  /// ---------------------------------------------------------------------------
   Future<void> deleteNotification(
     String notificationId, {
     String? adminId,
@@ -358,7 +514,8 @@ class NotificationRepository {
   }) async {
     try {
       await _notificationsCollection.doc(notificationId).delete();
-      // Log deletion with optional admin info
+
+      // Silme işlemini logla
       await _logAdminAction(
         adminId: adminId,
         adminName: adminName,
@@ -371,7 +528,20 @@ class NotificationRepository {
     }
   }
 
-  /// Acil bildirim yayınla (Admin için)
+  // =========================================================================
+  // ACİL DUYURU (ADMİN)
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Acil Bildirim Yayınla
+  /// ---------------------------------------------------------------------------
+  /// Admin tarafından acil duyuru oluşturur ve tüm kullanıcılara FCM gönderir.
+  ///
+  /// İşlem Adımları:
+  /// 1. Acil bildirim dokümanı oluştur
+  /// 2. Admin işlemini logla
+  /// 3. fcm_messages'a yaz (Cloud Function FCM gönderir)
+  /// ---------------------------------------------------------------------------
   Future<String> createEmergencyNotification({
     required String title,
     required String content,
@@ -381,6 +551,7 @@ class NotificationRepository {
     double longitude = 32.8642,
   }) async {
     try {
+      // 1. Acil bildirim dokümanı oluştur
       final docRef = await _notificationsCollection.add({
         'title': title,
         'content': content,
@@ -394,9 +565,10 @@ class NotificationRepository {
         'imageUrl': null,
         'createdAt': FieldValue.serverTimestamp(),
         'followedBy': [],
-        'isEmergency': true, // Flag olarak işaretle
+        'isEmergency': true, // Acil durum flag'i
       });
-      // Log emergency publish
+
+      // 2. Admin işlemini logla
       await _logAdminAction(
         adminId: adminId,
         adminName: adminName,
@@ -405,20 +577,32 @@ class NotificationRepository {
         details: {'title': title},
       );
 
-      // Also write a marker for Cloud Functions to pick up and send FCM
+      // 3. Cloud Function'u tetiklemek için fcm_messages'a yaz
       await firestore.collection('fcm_messages').add({
         'notificationId': docRef.id,
         'title': title,
         'content': content,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
       return docRef.id;
     } catch (e) {
       throw Exception('Acil bildirim yayınlanamadı: $e');
     }
   }
 
-  /// İç denetim (audit) kaydı ekler
+  // =========================================================================
+  // DENETİM LOGLAMA (PRİVATE)
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// Admin İşlemini Logla
+  /// ---------------------------------------------------------------------------
+  /// Tüm admin işlemlerini 'admin_actions' collection'una kaydeder.
+  /// Denetim ve güvenlik amaçlı kullanılır.
+  ///
+  /// NOT: Loglama hatası ana işlemi engellemez (sessizce geçilir).
+  /// ---------------------------------------------------------------------------
   Future<void> _logAdminAction({
     String? adminId,
     String? adminName,
@@ -436,7 +620,7 @@ class NotificationRepository {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (_) {
-      // Logging failure should not break main flow
+      // Loglama hatası ana işlemi bozmamalı
     }
   }
 }

@@ -1,11 +1,28 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Kimlik Doğrulama Repository (auth_repository.dart)
+/// =============================================================================
+/// Bu dosya Firebase Authentication ile ilgili tüm veritabanı işlemlerini içerir.
+/// Repository pattern: Veri erişim katmanını soyutlar.
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Firebase Auth hata kodlarını kullanıcı dostu Türkçe mesajlara çevirir
+// =============================================================================
+// FİREBASE AUTH HATA ÇEVİRİCİSİ
+// =============================================================================
+/// Firebase Auth hata kodlarını kullanıcı dostu Türkçe mesajlara çevirir.
+///
+/// Parametreler:
+/// - code: Firebase'den gelen hata kodu (orn: 'user-not-found')
+///
+/// Dönüş: Kullanıcıya gösterilecek Türkçe hata mesajı
 String getFirebaseAuthErrorMessage(String code) {
   switch (code) {
-    // Giriş hataları
+    // ----- Giriş Hataları -----
     case 'user-not-found':
       return 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.';
     case 'wrong-password':
@@ -19,7 +36,7 @@ String getFirebaseAuthErrorMessage(String code) {
     case 'too-many-requests':
       return 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.';
 
-    // Kayıt hataları
+    // ----- Kayıt Hataları -----
     case 'email-already-in-use':
       return 'Bu e-posta adresi zaten kullanımda.';
     case 'weak-password':
@@ -27,22 +44,26 @@ String getFirebaseAuthErrorMessage(String code) {
     case 'operation-not-allowed':
       return 'E-posta/şifre girişi devre dışı.';
 
-    // Şifre sıfırlama hataları
+    // ----- Şifre Sıfırlama Hataları -----
     case 'expired-action-code':
       return 'Şifre sıfırlama bağlantısının süresi dolmuş.';
     case 'invalid-action-code':
       return 'Şifre sıfırlama bağlantısı geçersiz.';
 
-    // Ağ hataları
+    // ----- Ağ Hataları -----
     case 'network-request-failed':
       return 'İnternet bağlantınızı kontrol edin.';
 
+    // ----- Varsayılan -----
     default:
       return 'Bir hata oluştu. Lütfen tekrar deneyin.';
   }
 }
 
-//River Pod ref için Provider
+// =============================================================================
+// AUTH REPOSITORY PROVIDER
+// =============================================================================
+/// Riverpod provider - dependency injection için
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     auth: FirebaseAuth.instance,
@@ -50,13 +71,30 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   );
 });
 
+// =============================================================================
+// AuthRepository Sınıfı
+// =============================================================================
+/// Kimlik doğrulama işlemlerini yöneten repository sınıfı.
+///
+/// İçerdiği İşlemler:
+/// - Giriş (signIn)
+/// - Kayıt (register)
+/// - Çıkış (signOut)
+/// - Şifre sıfırlama (sendPasswordResetEmail)
+// =============================================================================
 class AuthRepository {
+  // Firebase servisleri (Dependency Injection ile alınır)
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
+  /// Constructor - Firebase servislerini dışarıdan alır (test edilebilirlik için)
   AuthRepository({required this.auth, required this.firestore});
 
-  //login
+  // -------------------------------------------------------------------------
+  // Giriş Yap
+  // -------------------------------------------------------------------------
+  /// E-posta ve şifre ile kullanıcı girişi yapar.
+  /// Hata durumunda Türkçe hata mesajı fırlatır.
   Future<void> signIn({required String email, required String password}) async {
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
@@ -65,27 +103,45 @@ class AuthRepository {
     }
   }
 
-  //logout
+  // -------------------------------------------------------------------------
+  // Çıkış Yap
+  // -------------------------------------------------------------------------
+  /// Mevcut oturumu sonlandırır.
   Future<void> signOut() async {
     await auth.signOut();
   }
 
-  //Register
+  // -------------------------------------------------------------------------
+  // Kayıt Ol
+  // -------------------------------------------------------------------------
+  /// Yeni kullanıcı kaydı oluşturur.
+  ///
+  /// İşlem Adımları:
+  /// 1. Firebase Auth'da kullanıcı oluştur
+  /// 2. Firestore'da kullanıcı profili dokümanı oluştur
+  ///
+  /// Parametreler:
+  /// - email, password: Kimlik bilgileri
+  /// - name, surname: Kişisel bilgiler
+  /// - department: Birim/Bölüm
+  /// - role: Varsayılan 'user', admin ataması manuel yapılır
   Future<void> register({
     required String email,
     required String password,
     required String name,
     required String surname,
     required String department,
-    String role = "user", // default user
+    String role = "user",
   }) async {
     try {
+      // 1. Firebase Auth'da kullanıcı oluştur
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       String uid = userCredential.user!.uid;
 
+      // 2. Firestore'da profil dokümanı oluştur
       await firestore.collection("users").doc(uid).set({
         'uid': uid,
         'email': email,
@@ -102,7 +158,10 @@ class AuthRepository {
     }
   }
 
-  /// Şifre sıfırlama e-postası gönder
+  // -------------------------------------------------------------------------
+  // Şifre Sıfırlama
+  // -------------------------------------------------------------------------
+  /// Verilen e-posta adresine şifre sıfırlama bağlantısı gönderir.
   Future<void> sendPasswordResetEmail({required String email}) async {
     try {
       await auth.sendPasswordResetEmail(email: email);
@@ -113,5 +172,9 @@ class AuthRepository {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Mevcut Kullanıcı Getter'ı
+  // -------------------------------------------------------------------------
+  /// Şu anda giriş yapmış kullanıcıyı döndürür (null olabilir).
   User? get currentUser => auth.currentUser;
 }

@@ -1,17 +1,41 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Gönderici Bilgi Kartı (sender_info_card.dart)
+/// =============================================================================
+/// Bu dosya bildirim detay sayfasında bildirimi oluşturan
+/// kullanıcının bilgilerini gösteren kartı içerir.
+///
+/// Özellikler:
+/// - Kullanıcı avatarı, adı, departmanı ve rolü gösterimi
+/// - Riverpod ile kullanıcı verisi çekme (userByIdProvider)
+/// - Loading ve error state yönetimi
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 
+// =============================================================================
+// SenderInfoCard Widget'ı
+// =============================================================================
+/// Bildirimi gönderen kullanıcının bilgilerini gösterir.
+/// ConsumerWidget - Riverpod state'ini dinler.
 class SenderInfoCard extends ConsumerWidget {
+  /// Gönderenin kullanıcı ID'si
   final String senderId;
 
+  /// Constructor
   const SenderInfoCard({super.key, required this.senderId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Kullanıcı verisini ID ile çek
     final senderAsync = ref.watch(userByIdProvider(senderId));
 
+    // AsyncValue pattern - loading/error/data durumlarını ele al
     return senderAsync.when(
+      // Yükleniyor durumu
       loading:
           () => Container(
             height: 70,
@@ -21,8 +45,12 @@ class SenderInfoCard extends ConsumerWidget {
             ),
           ),
 
+      // Hata durumu - boş widget döndür
       error: (_, __) => const SizedBox(),
+
+      // Veri geldi
       data: (user) {
+        // Kullanıcı bulunamadıysa
         if (user == null) return const SizedBox();
 
         return Container(
@@ -34,6 +62,7 @@ class SenderInfoCard extends ConsumerWidget {
           ),
           child: Row(
             children: [
+              // ----- AVATAR -----
               CircleAvatar(
                 radius: 24,
                 backgroundColor: Theme.of(
@@ -43,6 +72,7 @@ class SenderInfoCard extends ConsumerWidget {
                     user.avatarUrl != null
                         ? NetworkImage(user.avatarUrl!)
                         : null,
+                // Avatar yoksa ismin ilk harfini göster
                 child:
                     user.avatarUrl == null
                         ? Text(
@@ -56,10 +86,13 @@ class SenderInfoCard extends ConsumerWidget {
               ),
 
               const SizedBox(width: 15),
+
+              // ----- KULLANICI BİLGİLERİ -----
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // "Oluşturan:" etiketi
                     Text(
                       "Oluşturan:",
                       style: TextStyle(
@@ -67,6 +100,7 @@ class SenderInfoCard extends ConsumerWidget {
                         color: Colors.grey.shade500,
                       ),
                     ),
+                    // Kullanıcı adı
                     Text(
                       user.name,
                       style: const TextStyle(
@@ -76,6 +110,7 @@ class SenderInfoCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
+                    // Departman ve rol
                     Row(
                       children: [
                         Icon(

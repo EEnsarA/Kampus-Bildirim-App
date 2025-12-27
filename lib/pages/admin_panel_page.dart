@@ -1,7 +1,23 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Admin Paneli (admin_panel_page.dart)
+/// =============================================================================
+/// Bu dosya admin kullanıcılar için yönetim panelini içerir.
+///
+/// İçerdiği Özellikler:
+/// - Bildirim yönetimi (durum güncelleme, silme)
+/// - Kullanıcı yönetimi (rol değiştirme)
+/// - Acil duyuru gönderme (FCM push notification)
+/// - İstatistikler ve loglar
+///
+/// ERİŞİM: Sadece role='admin' olan kullanıcılar
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Konum seçimi
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/components/status_tag.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
@@ -13,9 +29,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kampus_bildirim/constants/app_colors.dart';
 import 'admin_actions_page.dart';
 
-/// Admin paneli sayfası
-/// Sadece admin rol'ü olan kullanıcılar erişebilir
-/// Tüm bildirimleri yönetir: durumu günceller, acil duyuru yayınlar
+// =============================================================================
+// AdminPanelPage Widget'ı
+// =============================================================================
+/// Admin yönetim paneli.
+/// Tüm bildirimleri yönetir, acil duyuru yayınlar.
+/// Sadece admin rolü olan kullanıcılar erişebilir.
 class AdminPanelPage extends ConsumerStatefulWidget {
   const AdminPanelPage({super.key});
 
@@ -24,16 +43,21 @@ class AdminPanelPage extends ConsumerStatefulWidget {
 }
 
 class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
-  // Acil bildirim gönderme formundaki kontroller
+  // -------------------------------------------------------------------------
+  // Acil Bildirim Form Controller'ları
+  // -------------------------------------------------------------------------
   final TextEditingController _emergencyTitleController =
       TextEditingController();
   final TextEditingController _emergencyContentController =
       TextEditingController();
 
-  // Acil duyuru için konum (varsayılan: kampüs merkezi)
+  /// Acil duyuru konumu (varsayılan: kampüs merkezi)
   static const _defaultCampusLocation = LatLng(39.9042, 32.8642);
   LatLng _emergencyLocation = _defaultCampusLocation;
 
+  // -------------------------------------------------------------------------
+  // Dispose - Bellek Temizliği
+  // -------------------------------------------------------------------------
   @override
   void dispose() {
     _emergencyTitleController.dispose();
@@ -41,7 +65,10 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     super.dispose();
   }
 
-  /// Basit kullanıcı yönetim arayüzü: kullanıcıları listeler ve role değiştirir
+  // -------------------------------------------------------------------------
+  // Kullanıcı Yönetimi Arayüzü
+  // -------------------------------------------------------------------------
+  /// Kullanıcıları listeler ve rol değiştirme imkanı sunar.
   Widget _buildUserManagementSection(AppUser currentAdmin) {
     return Card(
       elevation: 0,
@@ -134,7 +161,10 @@ class _AdminPanelPageState extends ConsumerState<AdminPanelPage> {
     );
   }
 
-  /// Kullanıcı rolünü güncelle (basit update)
+  // -------------------------------------------------------------------------
+  // Kullanıcı Rolü Değiştirme
+  // -------------------------------------------------------------------------
+  /// Kullanıcının rolünü günceller (user <-> admin).
   Future<void> _changeUserRole(
     WidgetRef ref,
     String uid,

@@ -1,16 +1,35 @@
-import 'dart:io';
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bildirim Ekleme Sayfası (add_notification_page.dart)
+/// =============================================================================
+/// Bu dosya yeni bildirim oluşturma formunu içerir.
+///
+/// İçerdiği Özellikler:
+/// - Başlık ve içerik girişi
+/// - Bildirim tipi seçimi (dropdown)
+/// - GPS konum alma
+/// - Galeriden resim ekleme
+/// - Firebase'e bildirim kaydetme
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
+import 'dart:io'; // File sınıfı için
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart'; // Resim seçme
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
-import 'package:kampus_bildirim/services/location_service.dart';
-import 'package:kampus_bildirim/services/store_img_service.dart';
+import 'package:kampus_bildirim/services/location_service.dart'; // GPS konum
+import 'package:kampus_bildirim/services/store_img_service.dart'; // Storage yükleme
 
+// =============================================================================
+// AddNotificationPage Widget'ı
+// =============================================================================
+/// Yeni bildirim oluşturma formu.
 class AddNotificationPage extends ConsumerStatefulWidget {
   const AddNotificationPage({super.key});
 
@@ -20,24 +39,44 @@ class AddNotificationPage extends ConsumerStatefulWidget {
 }
 
 class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
+  // -------------------------------------------------------------------------
+  // Form ve Controller'lar
+  // -------------------------------------------------------------------------
+  /// Form validasyonu için GlobalKey
   final _formKey = GlobalKey<FormState>();
 
+  /// Başlık ve içerik input controller'ları
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
+  /// Seçilen bildirim tipi
   NotificationType _selectedType = NotificationType.general;
 
+  /// Form gönderiliyor mu?
   bool _isloading = false;
 
-  // Image
+  // -------------------------------------------------------------------------
+  // Resim State'i
+  // -------------------------------------------------------------------------
+  /// Galeriden seçilen resim dosyası
   File? _selectedImage;
 
-  // Konum
+  // -------------------------------------------------------------------------
+  // Konum State'i
+  // -------------------------------------------------------------------------
+  /// GPS koordinatları
   double? _latitude;
   double? _longitude;
+
+  /// Konum yükleniyor mu?
   bool _isLocationLoading = false;
+
+  /// Koordinatlardan alınan adres
   String? _currentAdress;
 
+  // -------------------------------------------------------------------------
+  // Dispose - Bellek Temizliği
+  // -------------------------------------------------------------------------
   @override
   void dispose() {
     _titleController.dispose();
@@ -45,16 +84,24 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
     super.dispose();
   }
 
+  // -------------------------------------------------------------------------
+  // GPS Konum Alma
+  // -------------------------------------------------------------------------
+  /// Cihazın mevcut konumunu alır ve adrese çevirir.
   Future<void> _getCurrentLocation() async {
     setState(() => _isLocationLoading = true);
 
     try {
+      // 1. GPS konumunu al
       final position = await LocationService.getCurrentLocation();
 
+      // 2. Koordinatları adrese çevir
       final address = await LocationService.getAddressFromCoordinates(
         position.latitude,
         position.longitude,
       );
+
+      // 3. State'i güncelle
       setState(() {
         _latitude = position.latitude;
         _longitude = position.longitude;
@@ -73,7 +120,10 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
     }
   }
 
-  // image_picker kütüpphanesi ile galeriden img alma
+  // -------------------------------------------------------------------------
+  // Galeriden Resim Seçme
+  // -------------------------------------------------------------------------
+  /// image_picker kütüphanesi ile galeriden resim seçer.
   Future<void> _pickImage() async {
     final picker = ImagePicker();
 
@@ -86,9 +136,14 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Form Gönderme
+  // -------------------------------------------------------------------------
+  /// Formu doğrular, resmi yükler ve Firestore'a kaydeder.
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Kullanıcı bilgisini al
     final userAsync = ref.read(userProfileProvider);
     final user = userAsync.value;
 
@@ -106,6 +161,7 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
     try {
       String? imageUrl;
 
+      // 1. Resim varsa Storage'a yükle
       if (_selectedImage != null) {
         imageUrl = await StoreImgService.uploadNotificationImage(
           _selectedImage!,
@@ -114,12 +170,12 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
 
       final repository = ref.read(notificationRepositoryProvider);
 
-      // Repository üzerinden bildirim oluştur
+      // 2. Firestore'a kaydet
       await repository.createNotification(
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         type: _selectedType,
-        latitude: _latitude ?? 39.9042,
+        latitude: _latitude ?? 39.9042, // Varsayılan: Ankara
         longitude: _longitude ?? 32.8642,
         senderId: user.uid,
         senderName: user.fullName,
@@ -128,9 +184,9 @@ class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
       );
 
       if (mounted) {
-        FocusScope.of(context).unfocus();
+        FocusScope.of(context).unfocus(); // Klavyeyi kapat
         showCustomToast(context, "Bildirim başarıyla gönderildi! 🚀");
-        context.pop();
+        context.pop(); // Sayfayı kapat
       }
     } catch (e) {
       if (mounted) {

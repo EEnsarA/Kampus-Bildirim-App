@@ -1,37 +1,81 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bildirim Modeli (app_notification.dart)
+/// =============================================================================
+/// Bu dosya uygulamanın ana veri modelini içerir.
+/// Kampüsteki tüm bildirimler bu model ile temsil edilir.
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
 
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore zaman damgası için
+import 'package:flutter/material.dart'; // Renk ve ikon için
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Harita işaretçisi için
+
+/// ---------------------------------------------------------------------------
+/// Bildirim Türü Enum'ı
+/// ---------------------------------------------------------------------------
+/// Kampüsteki farklı bildirim kategorilerini tanımlar.
+/// Her türün kendine özgü rengi ve ikonu vardır.
+/// ---------------------------------------------------------------------------
 enum NotificationType {
-  general,
-  emergency,
-  lostFound,
-  event,
-  failure,
-  environment,
+  general, // Genel duyuru
+  emergency, // Acil durum
+  lostFound, // Kayıp / Buluntu
+  event, // Etkinlik
+  failure, // Arıza bildirimi
+  environment, // Çevresel sorun
 }
 
-enum NotificationStatus { open, reviewing, resolved }
+/// ---------------------------------------------------------------------------
+/// Bildirim Durumu Enum'ı
+/// ---------------------------------------------------------------------------
+/// Bildirimin işlem aşamasını gösterir.
+/// ---------------------------------------------------------------------------
+enum NotificationStatus {
+  open, // Açık - henüz işleme alınmamış
+  reviewing, // İnceleniyor - admin tarafından değerlendiriliyor
+  resolved, // Çözüldü - işlem tamamlandı
+}
 
+/// =============================================================================
+/// AppNotification Sınıfı
+/// =============================================================================
+/// Kampüs bildirimlerinin ana veri modelidir.
+/// Firestore'daki 'notifications' collection'undaki verileri temsil eder.
+/// =============================================================================
 class AppNotification {
-  final String id;
-  final String title;
-  final String content;
-  final NotificationType type;
-  final NotificationStatus status;
-  final String? imageUrl;
+  // -------------------------------------------------------------------------
+  // Temel Bilgiler
+  // -------------------------------------------------------------------------
+  final String id; // Firestore doküman ID'si
+  final String title; // Bildirim başlığı
+  final String content; // Bildirim içeriği/açıklaması
+  final NotificationType type; // Bildirim türü
+  final NotificationStatus status; // Bildirim durumu
+  final String? imageUrl; // Opsiyonel resim URL'si
 
-  final double latitude;
-  final double longitude;
+  // -------------------------------------------------------------------------
+  // Konum Bilgileri (Harita için)
+  // -------------------------------------------------------------------------
+  final double latitude; // Enlem koordinatı
+  final double longitude; // Boylam koordinatı
 
-  final String senderId;
-  final String senderName;
-  final String department;
+  // -------------------------------------------------------------------------
+  // Gönderen Bilgileri
+  // -------------------------------------------------------------------------
+  final String senderId; // Gönderenin kullanıcı ID'si
+  final String senderName; // Gönderenin adı
+  final String department; // Gönderenin birimi/bölümü
 
-  final DateTime createdAt;
-  final bool isDeleted;
+  // -------------------------------------------------------------------------
+  // Meta Bilgiler
+  // -------------------------------------------------------------------------
+  final DateTime createdAt; // Oluşturulma tarihi
+  final bool isDeleted; // Soft-delete durumu
 
-  //ctor
+  // -------------------------------------------------------------------------
+  // Constructor (Yapıcı Metod)
+  // -------------------------------------------------------------------------
   AppNotification({
     required this.id,
     required this.title,
@@ -48,24 +92,33 @@ class AppNotification {
     this.isDeleted = false,
   });
 
+  // -------------------------------------------------------------------------
+  // Türe Göre Renk Getter'ı
+  // -------------------------------------------------------------------------
+  /// Bildirim türüne göre uygun rengi döndürür.
+  /// UI'da tutarlı renk kullanımı için merkezi yönetim sağlar.
   Color get typeColor {
     switch (type) {
       case NotificationType.emergency:
-        return Colors.red;
+        return Colors.red; // Acil: Kırmızı
       case NotificationType.lostFound:
-        return Colors.blue;
+        return Colors.blue; // Kayıp: Mavi
       case NotificationType.environment:
-        return Colors.green;
+        return Colors.green; // Çevre: Yeşil
       case NotificationType.general:
-        return Colors.grey.shade700;
+        return Colors.grey.shade700; // Genel: Gri
       case NotificationType.failure:
-        return Colors.orange;
+        return Colors.orange; // Arıza: Turuncu
       case NotificationType.event:
-        return Colors.deepPurple;
+        return Colors.deepPurple; // Etkinlik: Mor
     }
   }
 
-  // google map için konum renkleri
+  // -------------------------------------------------------------------------
+  // Harita İşaretçisi Rengi
+  // -------------------------------------------------------------------------
+  /// Google Maps işaretçi rengi için HUE değeri döndürür.
+  /// BitmapDescriptor sınıfının önceden tanımlı renklerini kullanır.
   double get markerHue {
     switch (type) {
       case NotificationType.emergency:
@@ -83,23 +136,31 @@ class AppNotification {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Tür İkonu Getter'ı
+  // -------------------------------------------------------------------------
+  /// Bildirim türüne göre uygun Material ikonu döndürür.
   IconData get typeIcon {
     switch (type) {
       case NotificationType.emergency:
-        return Icons.warning_amber_rounded;
+        return Icons.warning_amber_rounded; // Uyarı
       case NotificationType.lostFound:
-        return Icons.search;
+        return Icons.search; // Arama
       case NotificationType.event:
-        return Icons.event;
+        return Icons.event; // Takvim
       case NotificationType.general:
-        return Icons.campaign;
+        return Icons.campaign; // Duyuru
       case NotificationType.environment:
-        return Icons.maps_home_work_outlined;
+        return Icons.maps_home_work_outlined; // Bina
       case NotificationType.failure:
-        return Icons.engineering;
+        return Icons.engineering; // Mühendislik
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Tür Etiketi Getter'ı
+  // -------------------------------------------------------------------------
+  /// Bildirim türünü Türkçe okunabilir metin olarak döndürür.
   String get typeLabel {
     switch (type) {
       case NotificationType.emergency:
@@ -117,6 +178,10 @@ class AppNotification {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Durum Etiketi Getter'ı
+  // -------------------------------------------------------------------------
+  /// Bildirim durumunu Türkçe okunabilir metin olarak döndürür.
   String get statusLabel {
     switch (status) {
       case NotificationStatus.open:
@@ -128,26 +193,41 @@ class AppNotification {
     }
   }
 
-  // Color.fromARGB(255, 223, 182, 125);
+  // -------------------------------------------------------------------------
+  // Durum Rengi Getter'ı
+  // -------------------------------------------------------------------------
+  /// Bildirim durumuna göre badge/etiket rengi döndürür.
   Color get statusColor {
     switch (status) {
       case NotificationStatus.open:
-        return const Color.fromARGB(255, 197, 42, 42);
+        return const Color.fromARGB(255, 197, 42, 42); // Kırmızı
       case NotificationStatus.reviewing:
-        return const Color.fromARGB(255, 26, 49, 83);
+        return const Color.fromARGB(255, 26, 49, 83); // Lacivert
       case NotificationStatus.resolved:
-        return Colors.grey;
+        return Colors.grey; // Gri
     }
   }
 
-  // firestore map => AppNotification Çevirme
+  // =========================================================================
+  // Firestore Dönüşüm Metodları
+  // =========================================================================
+
+  /// ---------------------------------------------------------------------------
+  /// fromMap - Firestore'dan Nesneye Dönüşüm (Factory Constructor)
+  /// ---------------------------------------------------------------------------
+  /// Firestore dokümanından (Map) AppNotification nesnesine dönüştürür.
+  ///
+  /// Parametreler:
+  /// - map: Firestore'dan gelen key-value veri
+  /// - docId: Doküman ID'si (otomatik oluşturulan)
+  /// ---------------------------------------------------------------------------
   factory AppNotification.fromMap(Map<String, dynamic> map, String docId) {
     return AppNotification(
       id: docId,
       title: map['title'] ?? '',
       content: map['content'] ?? '',
 
-      // String olarak gelen tür bilgisini enum type'a çevirme
+      // String'i enum'a dönüştür (güvenli arama ile)
       type: NotificationType.values.firstWhere(
         (e) => e.name == (map['type'] ?? 'general'),
         orElse: () => NotificationType.general,
@@ -171,13 +251,18 @@ class AppNotification {
     );
   }
 
-  //  AppNotification => Firestore map çevirme
+  /// ---------------------------------------------------------------------------
+  /// toMap - Nesneden Firestore'a Dönüşüm
+  /// ---------------------------------------------------------------------------
+  /// AppNotification nesnesini Firestore'a yazılabilir Map formatına dönüştürür.
+  /// Yeni bildirim oluştururken veya güncellerken kullanılır.
+  /// ---------------------------------------------------------------------------
   Map<String, dynamic> toMap() {
     return {
       'title': title,
       'content': content,
-      'type': type.name,
-      'status': status.name,
+      'type': type.name, // Enum'ı string olarak kaydet
+      'status': status.name, // Enum'ı string olarak kaydet
       'imageUrl': imageUrl,
       'latitude': latitude,
       'longitude': longitude,
@@ -185,7 +270,9 @@ class AppNotification {
       'senderName': senderName,
       'department': department,
       'isDeleted': isDeleted,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': Timestamp.fromDate(
+        createdAt,
+      ), // DateTime'ı Timestamp'e çevir
     };
   }
 }

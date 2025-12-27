@@ -1,11 +1,31 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Giriş ve Kayıt Sayfası (login_page.dart)
+/// =============================================================================
+/// Bu dosya kullanıcı kimlik doğrulama işlemlerini yönetir.
+///
+/// İçerdiği Özellikler:
+/// - Kullanıcı girişi (e-posta + şifre)
+/// - Yeni kayıt (ad, soyad, departman, e-posta, şifre)
+/// - Şifre sıfırlama (e-posta ile)
+/// - FCM token kaydetme (push notification için)
+/// - Form validasyonu
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // FCM token için
+import 'package:firebase_auth/firebase_auth.dart'; // Auth kontrolü için
+import 'package:cloud_firestore/cloud_firestore.dart'; // Token kaydetme için
 import 'package:kampus_bildirim/services/auth_service.dart';
 
+// =============================================================================
+// LoginPage Widget'ı
+// =============================================================================
+/// Giriş/Kayıt sayfası.
+/// ConsumerStatefulWidget - Riverpod + State yönetimi.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -14,17 +34,28 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  // -------------------------------------------------------------------------
+  // Controller'lar ve State Değişkenleri
+  // -------------------------------------------------------------------------
+  /// Form input controller'ları
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _surnameController = TextEditingController();
 
+  /// Form validasyonu için GlobalKey
   final _formKey = GlobalKey<FormState>();
+
+  /// Yükleniyor durumu
   bool _isLoading = false;
+
+  /// Giriş mi kayıt mı modunda?
   bool _isLogin = true;
 
+  /// Seçilen departman
   String? _selectedDepartment;
+
+  /// Departman listesi
   final List<String> _departments = [
     "Bilgisayar Mühendisliği",
     "Elektrik-Elektronik Müh.",
@@ -35,6 +66,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     "Öğrenci İşleri",
   ];
 
+  // -------------------------------------------------------------------------
+  // Dispose - Bellek Temizliği
+  // -------------------------------------------------------------------------
+  /// Widget yok edildiğinde controller'ları temizle.
+  /// Memory leak önlemek için önemli!
   @override
   void dispose() {
     _emailController.dispose();
@@ -44,7 +80,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  /// Şifre sıfırlama dialogunu göster
+  // -------------------------------------------------------------------------
+  // Şifre Sıfırlama Dialogı
+  // -------------------------------------------------------------------------
+  /// Kullanıcıdan e-posta alıp şifre sıfırlama bağlantısı gönderir.
   void _showPasswordResetDialog() {
     final resetEmailController = TextEditingController();
 

@@ -1,3 +1,19 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Takip Edilenler Sayfası (followed_notifications_page.dart)
+/// =============================================================================
+/// Bu dosya kullanıcının takip ettiği bildirimleri listeler.
+///
+/// İçerdiği Özellikler:
+/// - Takip edilen bildirimlerin listesi
+/// - Bildirim tipine göre ikon ve renk
+/// - Durum bilgisi gösterimi
+/// - Detay sayfasına yönlendirme
+///
+/// NOT: userId cache'lenir - bu sayede loading döngüsüne girilmez.
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

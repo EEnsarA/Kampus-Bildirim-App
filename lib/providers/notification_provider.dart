@@ -1,14 +1,31 @@
+/// =============================================================================
+/// KAMPÜS BİLDİRİM - Bildirim Provider'ları (notification_provider.dart)
+/// =============================================================================
+/// Bu dosya Riverpod state yönetimi için bildirim provider'larını içerir.
+/// Repository katçatısı ile UI arasında köprü görevi görür.
+///
+/// Öğrenci Projesi - Mobil Programlama Dersi
+/// =============================================================================
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 
-// Tüm bildirimleri merkezi repository üzerinden getir
+// =============================================================================
+// ANA BİLDİRİM PROVIDER'I
+// =============================================================================
+/// Tüm bildirimleri gerçek zamanlı olarak dinler.
+/// StreamProvider: Firestore'dan gelen değişiklikleri otomatik yansıtır.
 final notificationsProvider = StreamProvider<List<AppNotification>>((ref) {
   final repository = ref.watch(notificationRepositoryProvider);
   return repository.getAllNotificationsStream();
 });
 
-// Belirli bir bildirimi ID ile getir
+// =============================================================================
+// DETAY PROVIDER'I
+// =============================================================================
+/// Belirli bir bildirimi ID ile getirir.
+/// FutureProvider.family: Parametreli async veri çekme için kullanılır.
 final notificationDetailProvider =
     FutureProvider.family<AppNotification?, String>((
       ref,
@@ -18,21 +35,33 @@ final notificationDetailProvider =
       return repository.getNotificationById(notificationId);
     });
 
-// Kullanıcının takip ettiği bildirimleri getir
+// =============================================================================
+// TAKİP EDİLEN BİLDİRİMLER PROVIDER'I
+// =============================================================================
+/// Kullanıcının takip ettiği bildirimleri gerçek zamanlı dinler.
+/// userId parametresi ile kullanıcıya özel filtreleme yapar.
 final followedNotificationsProvider =
     StreamProvider.family<List<AppNotification>, String>((ref, userId) {
       final repository = ref.watch(notificationRepositoryProvider);
       return repository.getFollowedNotificationsStream(userId);
     });
 
-// Tür bazlı bildirimleri getir
+// =============================================================================
+// TÜR BAZLI FİLTRELEME PROVIDER'I
+// =============================================================================
+/// Belirli bir türdeki bildirimleri filtreler.
+/// Örn: Sadece acil durumları veya etkinlikleri listelemek için.
 final notificationsByTypeProvider =
     StreamProvider.family<List<AppNotification>, NotificationType>((ref, type) {
       final repository = ref.watch(notificationRepositoryProvider);
       return repository.getNotificationsByType(type);
     });
 
-// Durum bazlı bildirimleri getir (açık bildirimler gibi)
+// =============================================================================
+// DURUM BAZLI FİLTRELEME PROVIDER'I
+// =============================================================================
+/// Belirli bir durumdaki bildirimleri filtreler.
+/// Örn: Sadece açık veya çözülmüş bildirimleri listelemek için.
 final notificationsByStatusProvider =
     StreamProvider.family<List<AppNotification>, NotificationStatus>((
       ref,
@@ -42,7 +71,11 @@ final notificationsByStatusProvider =
       return repository.getNotificationsByStatus(status);
     });
 
-// Arama yapmak için
+// =============================================================================
+// ARAMA PROVIDER'I
+// =============================================================================
+/// Verilen sorguya göre bildirimlerde arama yapar.
+/// Client-side arama: Firestore full-text search desteklemediği için.
 final searchNotificationsProvider =
     FutureProvider.family<List<AppNotification>, String>((ref, query) async {
       final repository = ref.watch(notificationRepositoryProvider);
