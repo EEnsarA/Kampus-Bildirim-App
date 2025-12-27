@@ -5,10 +5,12 @@ import 'package:kampus_bildirim/models/app_user.dart';
 class ProfileInfoCard extends StatelessWidget {
   final AppUser user;
   final VoidCallback? onEditImage;
+  final VoidCallback? onEditName;
   const ProfileInfoCard({
     super.key,
     required this.user,
     required this.onEditImage,
+    this.onEditName,
   });
 
   @override
@@ -77,13 +79,35 @@ class ProfileInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.fullName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        user.fullName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    if (onEditName != null)
+                      GestureDetector(
+                        onTap: onEditName,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
