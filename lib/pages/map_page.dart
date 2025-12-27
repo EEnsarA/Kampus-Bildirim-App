@@ -8,7 +8,8 @@ import 'package:kampus_bildirim/providers/notification_provider.dart';
 import 'package:kampus_bildirim/services/location_service.dart';
 
 class MapPage extends ConsumerStatefulWidget {
-  const MapPage({super.key});
+  final AppNotification? focusNotification;
+  const MapPage({super.key, this.focusNotification});
 
   @override
   ConsumerState<MapPage> createState() => _MapPageState();
@@ -20,7 +21,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   LatLng? _lastUserPosition;
 
   static const _initialPosition = CameraPosition(
-    target: LatLng(39.9042, 32.8642),
+    target: LatLng(39.9055, 41.2658), // Erzurum
     zoom: 12,
   );
 
@@ -100,7 +101,25 @@ class _MapPageState extends ConsumerState<MapPage> {
                 zoomControlsEnabled: false,
                 onMapCreated: (controller) {
                   _mapController = controller;
-                  _goToUserLocation();
+                  // Eğer belirli bir bildirime odaklanmak istiyorsak
+                  if (widget.focusNotification != null) {
+                    final notification = widget.focusNotification!;
+                    _mapController?.animateCamera(
+                      CameraUpdate.newCameraPosition(
+                        CameraPosition(
+                          target: LatLng(
+                            notification.latitude,
+                            notification.longitude,
+                          ),
+                          zoom: 17,
+                        ),
+                      ),
+                    );
+                    setState(() {
+                      _selectedNotification = notification;
+                    });
+                  }
+                  // Ana sayfadan açıldığında varsayılan konumda kalır
                 },
                 onTap: (_) {
                   setState(() {
