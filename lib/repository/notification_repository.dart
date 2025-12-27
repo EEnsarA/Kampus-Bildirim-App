@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 
@@ -130,6 +131,7 @@ class NotificationRepository {
   }
 
   /// Bildirimin durumunu güncelle (Admin için)
+  /// Takipçilere FCM bildirimi gönderilmesi için status_updates collection'ına yazar
   Future<void> updateNotificationStatus({
     required String notificationId,
     required NotificationStatus newStatus,
@@ -137,10 +139,23 @@ class NotificationRepository {
     String? adminName,
   }) async {
     try {
+      // Önce mevcut bildirimi al (eski durumu ve takipçileri almak için)
+      final doc = await _notificationsCollection.doc(notificationId).get();
+      if (!doc.exists) {
+        throw Exception('Bildirim bulunamadı');
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final oldStatus = data['status'] ?? 'open';
+      final followers = List<String>.from(data['followedBy'] ?? []);
+      final notificationTitle = data['title'] ?? 'Bildirim';
+
+      // Durumu güncelle
       await _notificationsCollection.doc(notificationId).update({
         'status': newStatus.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
       // Log admin action
       if (adminId != null || adminName != null) {
         await _logAdminAction(
@@ -148,10 +163,37 @@ class NotificationRepository {
           adminName: adminName,
           action: 'update_status',
           notificationId: notificationId,
-          details: {'newStatus': newStatus.name},
+          details: {'oldStatus': oldStatus, 'newStatus': newStatus.name},
+        );
+      }
+
+      // Takipçilere bildirim göndermek için fcm_messages collection'ına yaz
+      // Bu collection zaten çalışan sendEmergencyNotification Cloud Function tarafından dinleniyor
+      if (followers.isNotEmpty && oldStatus != newStatus.name) {
+        final statusLabels = {
+          'open': 'Açık',
+          'reviewing': 'İnceleniyor',
+          'resolved': 'Çözüldü',
+        };
+        final newStatusLabel = statusLabels[newStatus.name] ?? newStatus.name;
+
+        debugPrint('📢 FCM mesajı yazılıyor - Takipçiler: $followers');
+        await firestore.collection('fcm_messages').add({
+          'notificationId': notificationId,
+          'title': '📢 Durum Güncellendi',
+          'content':
+              '"$notificationTitle" bildirimi artık "$newStatusLabel" durumunda.',
+          'type': 'status_update',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        debugPrint('✅ FCM mesajı başarıyla yazıldı');
+      } else {
+        debugPrint(
+          '⚠️ FCM mesajı yazılmadı - Takipçi: ${followers.length}, Durum değişti mi: ${oldStatus != newStatus.name}',
         );
       }
     } catch (e) {
+      debugPrint('❌ Durum güncelleme hatası: $e');
       throw Exception('Bildirim durumu güncellenemedi: $e');
     }
   }
@@ -338,6 +380,8 @@ class NotificationRepository {
     required String content,
     required String adminId,
     required String adminName,
+    double latitude = 39.9042, // Varsayılan: kampüs merkezi
+    double longitude = 32.8642,
   }) async {
     try {
       final docRef = await _notificationsCollection.add({
@@ -345,8 +389,8 @@ class NotificationRepository {
         'content': content,
         'type': NotificationType.emergency.name,
         'status': NotificationStatus.open.name,
-        'latitude': 0.0, // Acil bildirimler konum spesifik değil
-        'longitude': 0.0,
+        'latitude': latitude,
+        'longitude': longitude,
         'senderId': adminId,
         'senderName': adminName,
         'department': 'YÖNETİM',

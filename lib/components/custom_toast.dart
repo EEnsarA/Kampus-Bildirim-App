@@ -13,9 +13,7 @@ void showCustomToast(
   overlayEntry = OverlayEntry(
     builder:
         (context) => Positioned(
-          top:
-              MediaQuery.of(context).padding.top +
-              10, // MediaQuery ekranın yukarısından 10px aşağıda
+          top: MediaQuery.of(context).padding.top + 60,
           left: 20,
           right: 20,
           child: Material(
