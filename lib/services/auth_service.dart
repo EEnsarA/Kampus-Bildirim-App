@@ -1,53 +1,29 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Kimlik Doğrulama Servisi (auth_service.dart)
-/// =============================================================================
-/// Bu dosya Repository ve UI arasındaki servis katmanını oluşturur.
-///
-/// NEDEN SERVİS KATMANI?
-/// İleride veritabanı veya authentication yöntemi değişirse:
-/// - Sadece Repository değiştirilir
-/// - Service ve UI dokunulmaz
-/// Bu sayede kod bakımı kolaylaşır (Separation of Concerns prensibi)
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// auth_service.dart
+// Neden service içerisinde her şeyi yapmak varken repository olarak ayrıldı ?
+// Çünkü ileride database , database yöntemi değişirse sadece repo değişilir.
+// Bu sayede baştan service yazmak zorunda kalınmaz . Özellikle büyük projelerde mimari .
+// TODO: belki şifre değiştirme de eklerim buraya
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/repository/auth_repository.dart';
 
-// =============================================================================
-// AUTH SERVICE PROVIDER
-// =============================================================================
-/// Riverpod provider - dependency injection için
 final authServiceProvider = Provider<AuthService>((ref) {
   final repo = ref.watch(authRepositoryProvider);
   return AuthService(authRepository: repo);
 });
 
-// =============================================================================
-// AuthService Sınıfı
-// =============================================================================
-/// Repository'ye erişimi soyutlayan servis sınıfı.
-/// UI bu sınıf aracılığıyla auth işlemlerini gerçekleştirir.
+/// Repository'ye erişimi soyutlayan servis sınıfı
 class AuthService {
-  /// Repository bağımlılığı (Dependency Injection)
   final AuthRepository authRepository;
 
-  /// Constructor
   AuthService({required this.authRepository});
 
-  // -------------------------------------------------------------------------
-  // Giriş Yap
-  // -------------------------------------------------------------------------
-  /// E-posta ve şifre ile oturum açar.
+  // login
   Future<void> signIn({required String email, required String password}) async {
     return authRepository.signIn(email: email, password: password);
   }
 
-  // -------------------------------------------------------------------------
-  // Kayıt Ol
-  // -------------------------------------------------------------------------
-  /// Yeni kullanıcı kaydı oluşturur.
+  // register
   Future<void> register({
     required String email,
     required String password,
@@ -61,22 +37,16 @@ class AuthService {
       name: name,
       surname: surname,
       department: department,
-      role: 'user', // Varsayılan rol
+      role: 'user',
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Çıkış Yap
-  // -------------------------------------------------------------------------
-  /// Mevcut oturumu sonlandırır.
+  // logout
   Future<void> signOut() async {
     return authRepository.signOut();
   }
 
-  // -------------------------------------------------------------------------
-  // Şifre Sıfırlama
-  // -------------------------------------------------------------------------
-  /// Verilen e-posta adresine şifre sıfırlama bağlantısı gönderir.
+  /// Şifre sıfırlama e-postası gönder
   Future<void> sendPasswordResetEmail({required String email}) async {
     return authRepository.sendPasswordResetEmail(email: email);
   }

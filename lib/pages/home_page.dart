@@ -1,19 +1,6 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Ana Sayfa (home_page.dart)
-/// =============================================================================
-/// Bu dosya uygulamamın ana ekranını içerir.
-/// Tüm bildirimleri listeler ve filtreleme/arama özelliği sunar.
-///
-/// İçerdiği Özellikler:
-/// - Bildirim listesi (gerçek zamanlı Firestore stream)
-/// - Arama çubuğu ile filtreleme
-/// - Bildirim tipi ve durumuna göre renklendirme
-/// - FCM token kaydetme
-/// - Takip edilen bildirimlerin durum değişikliği bildirimi
-/// - Harita ve profil sayfalarına navigasyon
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// home_page.dart - ana sayfa
+// tüm bildirimler burada listeleniyor, arama ve filtreleme var
+// FIXME: drawer kısmı biraz sorunlu daha sonra düzelteceğim
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

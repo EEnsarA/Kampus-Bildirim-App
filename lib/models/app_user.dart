@@ -1,33 +1,12 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Kullanıcı Modeli (app_user.dart)
-/// =============================================================================
-/// Bu dosya uygulamanın kullanıcı veri modelini içerir.
-/// Firebase Auth ile doğrulanan kullanıcıların profillerini temsil eder.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// app_user.dart
+// kullanıcı modeli - firebase auth ile eşleştiriliyor
 
-/// =============================================================================
-/// AppUser Sınıfı
-/// =============================================================================
-/// Kullanıcı profillerinin ana veri modelidir.
-/// Firestore'daki 'users' collection'undaki verileri temsil eder.
-/// =============================================================================
 class AppUser {
-  // -------------------------------------------------------------------------
-  // Kimlik Bilgileri
-  // -------------------------------------------------------------------------
-  final String uid; // Firebase Auth kullanıcı ID'si (benzersiz)
-  final String email; // E-posta adresi
-
-  // -------------------------------------------------------------------------
-  // Kişisel Bilgiler
-  // -------------------------------------------------------------------------
-  final String name; // Ad
-  final String surname; // Soyad
-  final String department; // Birim/Bölüm (orn: Bilgisayar Mühendisliği)
-
-  // -------------------------------------------------------------------------
+  final String uid;
+  final String email;
+  final String name;
+  final String surname;
+  final String department;
   // Yetki ve Profil
   // -------------------------------------------------------------------------
   final String role; // Rol: 'user' veya 'admin'

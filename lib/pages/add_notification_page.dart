@@ -1,35 +1,20 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Ekleme Sayfası (add_notification_page.dart)
-/// =============================================================================
-/// Bu dosya yeni bildirim oluşturma formunu içerir.
-///
-/// İçerdiği Özellikler:
-/// - Başlık ve içerik girişi
-/// - Bildirim tipi seçimi (dropdown)
-/// - GPS konum alma
-/// - Galeriden resim ekleme
-/// - Firebase'e bildirim kaydetme
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// add_notification_page.dart
+// yeni bildirim oluşturma formu
+// TODO: belki birden fazla resim eklenebilir ileride
 
-import 'dart:io'; // File sınıfı için
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart'; // Resim seçme
+import 'package:image_picker/image_picker.dart';
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
-import 'package:kampus_bildirim/services/location_service.dart'; // GPS konum
-import 'package:kampus_bildirim/services/store_img_service.dart'; // Storage yükleme
+import 'package:kampus_bildirim/services/location_service.dart';
+import 'package:kampus_bildirim/services/store_img_service.dart';
 
-// =============================================================================
-// AddNotificationPage Widget'ı
-// =============================================================================
-/// Yeni bildirim oluşturma formu.
 class AddNotificationPage extends ConsumerStatefulWidget {
   const AddNotificationPage({super.key});
 
@@ -39,32 +24,17 @@ class AddNotificationPage extends ConsumerStatefulWidget {
 }
 
 class _AddNotificationPageState extends ConsumerState<AddNotificationPage> {
-  // -------------------------------------------------------------------------
-  // Form ve Controller'lar
-  // -------------------------------------------------------------------------
-  /// Form validasyonu için GlobalKey
   final _formKey = GlobalKey<FormState>();
-
-  /// Başlık ve içerik input controller'ları
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
-  /// Seçilen bildirim tipi
   NotificationType _selectedType = NotificationType.general;
-
-  /// Form gönderiliyor mu?
   bool _isloading = false;
 
-  // -------------------------------------------------------------------------
-  // Resim State'i
-  // -------------------------------------------------------------------------
-  /// Galeriden seçilen resim dosyası
+  // resim
   File? _selectedImage;
 
-  // -------------------------------------------------------------------------
-  // Konum State'i
-  // -------------------------------------------------------------------------
-  /// GPS koordinatları
+  // konum
   double? _latitude;
   double? _longitude;
 

@@ -1,24 +1,12 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Giriş ve Kayıt Sayfası (login_page.dart)
-/// =============================================================================
-/// Bu dosya kullanıcı kimlik doğrulama işlemlerini yönetir.
-///
-/// İçerdiği Özellikler:
-/// - Kullanıcı girişi (e-posta + şifre)
-/// - Yeni kayıt (ad, soyad, departman, e-posta, şifre)
-/// - Şifre sıfırlama (e-posta ile)
-/// - FCM token kaydetme (push notification için)
-/// - Form validasyonu
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// login_page.dart
+// giriş ve kayıt formu
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // FCM token için
-import 'package:firebase_auth/firebase_auth.dart'; // Auth kontrolü için
-import 'package:cloud_firestore/cloud_firestore.dart'; // Token kaydetme için
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kampus_bildirim/services/auth_service.dart';
 
 // =============================================================================

@@ -1,28 +1,11 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Resim Yükleme Servisi (store_img_service.dart)
-/// =============================================================================
-/// Bu dosya Firebase Storage'a resim yükleme işlemlerini yönetir.
-/// Bildirim resimleri ve profil fotoğrafları için kullanılır.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// store_img_service.dart
+// firebase storage'a resim yükleme
 
-import 'dart:io'; // Dosya işlemleri için
+import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 
-// =============================================================================
-// StoreImgService Sınıfı
-// =============================================================================
-/// Firebase Storage'a resim yükleme işlemlerini gerçekleştirir.
-/// Static metodlar kullanıldığı için instance oluşturmaya gerek yoktur.
 class StoreImgService {
-  // -------------------------------------------------------------------------
-  // Bildirim Resmi Yükle
-  // -------------------------------------------------------------------------
-  /// Bildirime eklenecek resmi Storage'a yükler.
-  ///
-  /// Depolama Yolu: notification_images/{timestamp}.jpg
-  /// Her resim benzersiz timestamp ile adlandırılır.
+  /// Bildirim resmi yükle
   ///
   /// Dönüş: Yüklenen resmin download URL'si (başarısızsa null)
   // -------------------------------------------------------------------------

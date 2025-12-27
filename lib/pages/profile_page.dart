@@ -1,25 +1,14 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Profil Sayfası (profile_page.dart)
-/// =============================================================================
-/// Bu dosya kullanıcı profil bilgilerini ve ayarlarını gösterir.
-///
-/// İçerdiği Özellikler:
-/// - Profil fotoğrafı değiştirme (galeri seçimi + Firebase Storage yükleme)
-/// - Bildirim tercihleri (switch'ler ile)
-/// - Takip edilen bildirimler sayfasına yönlendirme
-/// - Admin paneli erişimi (sadece admin'ler için)
-/// - Çıkış yapma
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// profile_page.dart
+// kullanıcı profil ve ayarlar
+// TODO: belki tema değiştirme eklerim buraya
 
-import 'dart:io'; // File sınıfı için
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart'; // Resim seçme
+import 'package:image_picker/image_picker.dart';
 import 'package:kampus_bildirim/components/custom_toast.dart';
 import 'package:kampus_bildirim/components/profile_info_card.dart';
 import 'package:kampus_bildirim/components/section_title.dart';

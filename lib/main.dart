@@ -1,13 +1,6 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM UYGULAMASI - Ana Giriş Noktası (main.dart)
-/// =============================================================================
-/// Bu dosya Flutter uygulamasının başlangıç noktasıdır.
-/// Firebase servislerini başlatır ve FCM (Firebase Cloud Messaging) yapılandırır.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// main.dart - uygulama başlangıç noktası
+// firebase ve fcm konfigürasyonu burada
 
-// Flutter temel kütüphanesi
 import 'package:flutter/material.dart';
 
 // Firebase servisleri

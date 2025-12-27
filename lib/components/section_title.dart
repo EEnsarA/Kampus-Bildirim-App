@@ -1,13 +1,4 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bölüm Başlığı (section_title.dart)
-/// =============================================================================
-/// Bu dosya sayfalarda bölüm ayıracı olarak kullanılan
-/// başlık bileşenini içerir.
-///
-/// Kullanım: SectionTitle(title: "Bölüm Adı")
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// section_title.dart - bölüm başlığı
 
 import 'package:flutter/material.dart';
 

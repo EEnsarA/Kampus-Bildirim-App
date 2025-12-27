@@ -1,24 +1,12 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Kullanıcı Provider'ları (user_provider.dart)
-/// =============================================================================
-/// Bu dosya Riverpod state yönetimi için kullanıcı provider'larını içerir.
-/// Firebase Auth ve Firestore'dan kullanıcı verilerini yönetir.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// user_provider.dart
+// kullanıcı state'i riverpod ile yönetiliyor
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/models/app_user.dart';
 
-// =============================================================================
-// AUTH STATE PROVIDER
-// =============================================================================
-/// Firebase Auth durumunu gerçek zamanlı dinler.
-/// Kullanıcı giriş/çıkış yaptığında otomatik güncellenir.
-///
-/// ref.watch(authStateProvider) ile kullanılır.
+// auth durumunu dinle
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });

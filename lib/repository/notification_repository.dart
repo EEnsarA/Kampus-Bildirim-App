@@ -1,19 +1,6 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Repository (notification_repository.dart)
-/// =============================================================================
-/// Bu dosya Firestore veritabanı ile bildirim CRUD işlemlerini yönetir.
-/// Repository pattern: Veri erişim katmanını UI'dan soyutlar.
-///
-/// İçerdiği İşlemler:
-/// - Bildirim listeleme (Stream)
-/// - Bildirim oluşturma
-/// - Durum güncelleme
-/// - Takip etme/bırakma
-/// - Arama ve filtreleme
-/// - Admin işlemleri (silme, acil duyuru)
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// notification_repository.dart
+// firestore crud işlemleri burada
+// TODO: maybe caching ekleyebilirim performans için
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';

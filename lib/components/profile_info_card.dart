@@ -1,16 +1,4 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Profil Bilgi Kartı (profile_info_card.dart)
-/// =============================================================================
-/// Bu dosya profil sayfasında kullanıcı bilgilerini gösteren
-/// ana kart bileşenini içerir.
-///
-/// Özellikler:
-/// - Profil fotoğrafı (değiştirilebilir)
-/// - Ad, e-posta, rol ve departman bilgileri
-/// - StatusTag bileşeni ile etiketler
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// profile_info_card.dart - profil kartı
 
 import 'package:flutter/material.dart';
 import 'package:kampus_bildirim/components/status_tag.dart';

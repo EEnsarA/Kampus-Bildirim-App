@@ -1,31 +1,18 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Provider'ları (notification_provider.dart)
-/// =============================================================================
-/// Bu dosya Riverpod state yönetimi için bildirim provider'larını içerir.
-/// Repository katçatısı ile UI arasında köprü görevi görür.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// notification_provider.dart
+// Riverpod ile bildirim state yönetimi
+// StreamProvider kullanıldı çünkü firestore realtime dinleme yapıyor
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/repository/notification_repository.dart';
 
-// =============================================================================
-// ANA BİLDİRİM PROVIDER'I
-// =============================================================================
-/// Tüm bildirimleri gerçek zamanlı olarak dinler.
-/// StreamProvider: Firestore'dan gelen değişiklikleri otomatik yansıtır.
+// tüm bildirimleri dinle
 final notificationsProvider = StreamProvider<List<AppNotification>>((ref) {
   final repository = ref.watch(notificationRepositoryProvider);
   return repository.getAllNotificationsStream();
 });
 
-// =============================================================================
-// DETAY PROVIDER'I
-// =============================================================================
-/// Belirli bir bildirimi ID ile getirir.
-/// FutureProvider.family: Parametreli async veri çekme için kullanılır.
+// tek bildirim detayı
 final notificationDetailProvider =
     FutureProvider.family<AppNotification?, String>((
       ref,

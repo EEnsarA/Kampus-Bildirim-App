@@ -1,24 +1,12 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Detay Sayfası (notification_detail_page.dart)
-/// =============================================================================
-/// Bu dosya seçilen bildirimin detaylarını gösterir.
-///
-/// İçerdiği Özellikler:
-/// - Bildirim başlık, içerik, resim, konum gösterimi
-/// - Gönderici bilgisi kartı
-/// - Takip etme/bırakma işlevi
-/// - Admin: Durum güncelleme, içerik düzenleme, silme
-/// - Harita önizlemesi (mini map)
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// notification_detail_page.dart
+// seçilen bildirimin detay sayfası
+// admin burada durum güncelleyebilir
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Mini harita
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-// Bileşenler
 import 'package:kampus_bildirim/components/notification_status_badge.dart';
 import 'package:kampus_bildirim/components/sender_info_card.dart';
 import 'package:kampus_bildirim/components/custom_toast.dart';

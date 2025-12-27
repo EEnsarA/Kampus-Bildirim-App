@@ -1,33 +1,18 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Harita Sayfası (map_page.dart)
-/// =============================================================================
-/// Bu dosya tüm bildirimleri harita üzerinde gösterir.
-///
-/// İçerdiği Özellikler:
-/// - Google Maps entegrasyonu
-/// - Her bildirim için marker (tipine göre renk)
-/// - Marker'a tıklayınca bildirim kartı gösterme
-/// - Kullanıcının konumuna gitme
-/// - Belirli bir bildirime zoom yapma
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// map_page.dart - harita sayfası
+// google maps entegrasyonu için google_maps_flutter paketi kullanıldı
+// TODO: marker'ları cluster yapabilirim belki ama şimdilik böyle kalsın
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Harita
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:kampus_bildirim/components/map_notification_card.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 import 'package:kampus_bildirim/providers/notification_provider.dart';
-import 'package:kampus_bildirim/services/location_service.dart'; // GPS
+import 'package:kampus_bildirim/services/location_service.dart';
 
-// =============================================================================
-// MapPage Widget'ı
-// =============================================================================
-/// Bildirimleri harita üzerinde gösteren sayfa.
+/// Bildirimleri harita üzerinde gösteren sayfa
 class MapPage extends ConsumerStatefulWidget {
-  /// Belirli bir bildirime odaklanmak için (opsiyonel)
   final AppNotification? targetNotification;
 
   const MapPage({super.key, this.targetNotification});
@@ -37,17 +22,9 @@ class MapPage extends ConsumerStatefulWidget {
 }
 
 class _MapPageState extends ConsumerState<MapPage> {
-  // -------------------------------------------------------------------------
-  // State Değişkenleri
-  // -------------------------------------------------------------------------
-  /// Google Maps controller
   GoogleMapController? _mapController;
-
-  /// Seçili bildirim (kart gösterimi için)
   AppNotification? _selectedNotification;
-
-  /// Son bilinen kullanıcı konumu (cache)
-  LatLng? _lastUserPosition;
+  LatLng? _lastUserPosition; // son konum cache
 
   /// Başlangıç kamera pozisyonu (Ankara merkez)
   static const _initialPosition = CameraPosition(

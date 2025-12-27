@@ -1,15 +1,4 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Durum Rozeti (notification_status_badge.dart)
-/// =============================================================================
-/// Bu dosya bildirimlerin durumunu (aktif/çözüldü/beklemede vb.)
-/// gösteren küçük rozet bileşenini içerir.
-///
-/// Özellikler:
-/// - Duruma göre renk değişimi
-/// - Hafif arka plan ve kenarlık tasarımı
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// notification_status_badge.dart - durum rozeti
 
 import 'package:flutter/material.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';

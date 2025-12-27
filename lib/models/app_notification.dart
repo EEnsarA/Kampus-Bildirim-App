@@ -1,41 +1,22 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Bildirim Modeli (app_notification.dart)
-/// =============================================================================
-/// Bu dosya uygulamanın ana veri modelini içerir.
-/// Kampüsteki tüm bildirimler bu model ile temsil edilir.
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// app_notification.dart
+// bildirim modeli - firestore'dan gelen veriler bu modele dönüştürülüyor
 
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore zaman damgası için
-import 'package:flutter/material.dart'; // Renk ve ikon için
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Harita işaretçisi için
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-/// ---------------------------------------------------------------------------
-/// Bildirim Türü Enum'ı
-/// ---------------------------------------------------------------------------
-/// Kampüsteki farklı bildirim kategorilerini tanımlar.
-/// Her türün kendine özgü rengi ve ikonu vardır.
-/// ---------------------------------------------------------------------------
+// bildirim türleri
 enum NotificationType {
-  general, // Genel duyuru
-  emergency, // Acil durum
-  lostFound, // Kayıp / Buluntu
-  event, // Etkinlik
-  failure, // Arıza bildirimi
-  environment, // Çevresel sorun
+  general,
+  emergency,
+  lostFound,
+  event,
+  failure,
+  environment,
 }
 
-/// ---------------------------------------------------------------------------
-/// Bildirim Durumu Enum'ı
-/// ---------------------------------------------------------------------------
-/// Bildirimin işlem aşamasını gösterir.
-/// ---------------------------------------------------------------------------
-enum NotificationStatus {
-  open, // Açık - henüz işleme alınmamış
-  reviewing, // İnceleniyor - admin tarafından değerlendiriliyor
-  resolved, // Çözüldü - işlem tamamlandı
-}
+// bildirim durumu
+enum NotificationStatus { open, reviewing, resolved }
 
 /// =============================================================================
 /// AppNotification Sınıfı

@@ -1,28 +1,11 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Gönderici Bilgi Kartı (sender_info_card.dart)
-/// =============================================================================
-/// Bu dosya bildirim detay sayfasında bildirimi oluşturan
-/// kullanıcının bilgilerini gösteren kartı içerir.
-///
-/// Özellikler:
-/// - Kullanıcı avatarı, adı, departmanı ve rolü gösterimi
-/// - Riverpod ile kullanıcı verisi çekme (userByIdProvider)
-/// - Loading ve error state yönetimi
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// sender_info_card.dart
+// gönderici bilgisi kartı
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kampus_bildirim/providers/user_provider.dart';
 
-// =============================================================================
-// SenderInfoCard Widget'ı
-// =============================================================================
-/// Bildirimi gönderen kullanıcının bilgilerini gösterir.
-/// ConsumerWidget - Riverpod state'ini dinler.
 class SenderInfoCard extends ConsumerWidget {
-  /// Gönderenin kullanıcı ID'si
   final String senderId;
 
   /// Constructor

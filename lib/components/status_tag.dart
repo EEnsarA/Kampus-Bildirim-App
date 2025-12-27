@@ -1,13 +1,4 @@
-/// =============================================================================
-/// KAMPÜS BİLDİRİM - Durum Etiketi (status_tag.dart)
-/// =============================================================================
-/// Bu dosya rol, departman gibi bilgileri göstermek için
-/// kullanılan küçük etiket bileşenini içerir.
-///
-/// Kullanım: StatusTag(text: "Admin", color: Colors.red)
-///
-/// Öğrenci Projesi - Mobil Programlama Dersi
-/// =============================================================================
+// status_tag.dart - küçük etiket widget
 
 import 'package:flutter/material.dart';
 
