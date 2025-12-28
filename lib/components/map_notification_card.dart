@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kampus_bildirim/components/sender_info_card.dart';
 import 'package:kampus_bildirim/models/app_notification.dart';
 
 class MapNotificationCard extends StatelessWidget {
@@ -71,6 +72,10 @@ class MapNotificationCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+
+            const SizedBox(height: 10),
+
+            SenderInfoCard(senderId: notification.senderId),
 
             const SizedBox(height: 15),
 
