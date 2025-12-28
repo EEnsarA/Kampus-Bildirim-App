@@ -42,4 +42,9 @@ class AuthService {
   Future<void> signOut() async {
     return authRepository.signOut();
   }
+
+  /// Şifre sıfırlama e-postası gönder
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    return authRepository.sendPasswordResetEmail(email: email);
+  }
 }

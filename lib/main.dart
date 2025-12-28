@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kampus_bildirim/constants/app_colors.dart';
@@ -40,6 +42,18 @@ class _MainAppState extends ConsumerState<MainApp> {
   void initState() {
     super.initState();
     _setupFCM();
+    _listenToAuthChanges();
+  }
+
+  /// Auth state değişikliğini dinle - kullanıcı giriş yaptığında FCM token kaydet
+  void _listenToAuthChanges() {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Kullanıcı giriş yaptı, FCM token'ı kaydet
+        debugPrint('Auth state changed: User logged in - saving FCM token');
+        _saveFcmToken();
+      }
+    });
   }
 
   Future<void> _setupFCM() async {
@@ -56,6 +70,14 @@ class _MainAppState extends ConsumerState<MainApp> {
       // 'all' topic'ine subscribe ol
       await FirebaseMessaging.instance.subscribeToTopic('all');
       debugPrint('Subscribed to topic: all');
+
+      // FCM token'ı al ve Firestore'a kaydet
+      await _saveFcmToken();
+
+      // Token yenilendiğinde tekrar kaydet
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        _updateFcmTokenInFirestore(newToken);
+      });
 
       // Foreground mesajlarını dinle
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -132,6 +154,39 @@ class _MainAppState extends ConsumerState<MainApp> {
     final notificationId = message.data['notificationId'];
     if (notificationId != null && notificationId.isNotEmpty) {
       ref.read(routerProvider).push('/notification-detail/$notificationId');
+    }
+  }
+
+  /// FCM token'ı al ve Firestore'a kaydet
+  Future<void> _saveFcmToken() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint('FCM Token: Kullanıcı giriş yapmamış');
+        return;
+      }
+
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _updateFcmTokenInFirestore(token);
+      }
+    } catch (e) {
+      debugPrint('FCM Token kaydetme hatası: $e');
+    }
+  }
+
+  /// FCM token'ı Firestore'daki kullanıcı dokümanına kaydet
+  Future<void> _updateFcmTokenInFirestore(String token) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'fcmToken': token, 'fcmTokenUpdatedAt': FieldValue.serverTimestamp()},
+      );
+      debugPrint('FCM Token kaydedildi: ${token.substring(0, 20)}...');
+    } catch (e) {
+      debugPrint('FCM Token güncelleme hatası: $e');
     }
   }
 

@@ -20,22 +20,27 @@ final authStateProvider = StreamProvider<User?>((ref) {
 final userProfileProvider = StreamProvider<AppUser?>((ref) {
   final authState = ref.watch(authStateProvider);
 
-  if (authState.isLoading || authState.hasError) {
-    return const Stream.empty();
-  }
-
-  final user = authState.value;
-  if (user == null) {
-    return Stream.value(null);
-  }
-  return FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .snapshots()
-      .map((snapshot) {
-        if (!snapshot.exists) return null;
-        return AppUser.fromMap(snapshot.data()!, user.uid);
-      });
+  // Auth state henüz data içermiyorsa, boş stream döndür
+  // hasValue: data veya error var mı? isLoading durumunda false olur
+  return authState.when(
+    data: (user) {
+      if (user == null) {
+        // Kullanıcı giriş yapmamış
+        return Stream.value(null);
+      }
+      // Kullanıcı giriş yapmış, Firestore'dan profili getir
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .map((snapshot) {
+            if (!snapshot.exists) return null;
+            return AppUser.fromMap(snapshot.data()!, user.uid);
+          });
+    },
+    loading: () => const Stream.empty(), // Auth yüklenirken boş stream
+    error: (_, __) => Stream.value(null), // Hata durumunda null döndür
+  );
 });
 
 // user id sine göre Firestore dan user getirme

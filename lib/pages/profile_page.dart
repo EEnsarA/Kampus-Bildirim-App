@@ -68,6 +68,77 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
+  // Ad soyad düzenleme dialogu
+  Future<void> _showEditNameDialog(AppUser user) async {
+    final nameController = TextEditingController(text: user.name);
+    final surnameController = TextEditingController(text: user.surname);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Profil Bilgilerini Düzenle'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ad',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: surnameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Soyad',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Kaydet'),
+              ),
+            ],
+          ),
+    );
+
+    if (result == true) {
+      final newName = nameController.text.trim();
+      final newSurname = surnameController.text.trim();
+
+      if (newName.isEmpty || newSurname.isEmpty) {
+        if (mounted) {
+          showCustomToast(context, 'Ad ve soyad boş olamaz', isError: true);
+        }
+        return;
+      }
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'name': newName, 'surname': newSurname});
+
+        if (mounted) {
+          showCustomToast(context, 'Profil bilgileri güncellendi!');
+        }
+      } catch (e) {
+        if (mounted) {
+          showCustomToast(context, 'Hata: $e', isError: true);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
@@ -99,6 +170,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ProfileInfoCard(
                   user: user,
                   onEditImage: () => _pickAndUploadImage(user.uid),
+                  onEditName: () => _showEditNameDialog(user),
                 ),
                 const SizedBox(height: 20),
                 const SectionTitle(title: "Bildirim Tercihleri"),

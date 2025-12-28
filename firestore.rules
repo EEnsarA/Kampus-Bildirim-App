@@ -32,5 +32,12 @@ service cloud.firestore {
       allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow read, update, delete: if false;
     }
+
+    // Status updates - triggered when admin changes notification status
+    // Only admins can create, Cloud Functions will read to send FCM
+    match /status_updates/{doc} {
+      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read, update, delete: if false;
+    }
   }
 }

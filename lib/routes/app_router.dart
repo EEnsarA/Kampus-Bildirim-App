@@ -26,8 +26,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: "/map",
         builder: (context, state) {
-          final notification = state.extra as AppNotification?;
-          return MapPage(targetNotification: notification);
+          final focusNotification = state.extra as AppNotification?;
+          return MapPage(focusNotification: focusNotification);
         },
       ),
       GoRoute(
